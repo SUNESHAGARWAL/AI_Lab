@@ -1,0 +1,55 @@
+[tool.uv.workspace]
+members = [
+    "apps/api",
+    "apps/ingest",
+    "packages/core",
+    "packages/retrieval",
+    "packages/llm",
+    "packages/telemetry",
+    "packages/evals",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "httpx>=0.27",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["apps", "packages"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = [
+    "packages/core/src",
+    "packages/retrieval/src",
+    "packages/llm/src",
+    "packages/telemetry/src",
+    "packages/evals/src",
+    "apps/api/src",
+    "apps/ingest/src",
+]
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[[tool.mypy.overrides]]
+module = "core.*"
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["apps", "packages"]
+asyncio_mode = "auto"
+markers = [
+    "llm: requires a live LLM call, excluded from `just evals-fast`/fast CI runs",
+]
