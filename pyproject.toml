@@ -54,4 +54,5 @@ testpaths = ["apps", "packages"]
 asyncio_mode = "auto"
 markers = [
     "llm: requires a live LLM call, excluded from `just evals-fast`/fast CI runs",
+    "integration: requires live infra (Postgres, embedding model download), excluded from the fast test command",
 ]

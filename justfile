@@ -5,16 +5,16 @@ dev:
     @echo "  pnpm --filter web dev"
 
 test:
-    uv run pytest -m "not llm"
+    uv run pytest -m "not llm and not integration"
 
 evals-fast:
-    @echo "stub: layers 1+2 (deterministic, free) — lands with packages/evals"
+    uv run --package evals python -m evals.cli run-retrieval
 
 evals-full:
     @echo "stub: layers 3+4 (judge model, nightly only) — lands with packages/evals"
 
 ingest:
-    uv run --package ingest python -m ingest.cli
+    uv run --package ingest python -m ingest.cli ingest-corpus
 
 lint:
     uv run ruff check --fix .
