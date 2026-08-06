@@ -1,13 +1,52 @@
+import json
+from types import SimpleNamespace
+from typing import Any
+
 import pytest
 from api.graph.build import build_graph
 from api.graph.nodes import route_after_critic
+from api.graph.schemas import CriticVerdict
 from api.graph.state import initial_state
+from core.models import Chunk
+from core.testing import FakeReranker, FakeRetriever
+from fakeredis import FakeAsyncRedis
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
+from llm import Gateway
+
+
+def _fake_gateway() -> Gateway:
+    generated_payload = json.dumps(
+        {"answer": "stub answer", "citations": [], "confidence": 0.5, "abstained": False}
+    )
+    # Always fails, reproducing the old stub critic's "always wants another pass"
+    # behavior through the real critic node — proves the hard cap still holds.
+    critic_payload = json.dumps({"faithful": False, "reason": "stub: always retry"})
+
+    async def completion_fn(**kwargs: Any) -> SimpleNamespace:
+        # Gateway._call_provider forwards response_model as response_format, so the
+        # same fake can serve both the generator's and critic's distinct schemas.
+        content = (
+            critic_payload if kwargs.get("response_format") is CriticVerdict else generated_payload
+        )
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content=content))],
+            usage=SimpleNamespace(prompt_tokens=10, completion_tokens=5, total_tokens=15),
+        )
+
+    return Gateway(redis_client=FakeAsyncRedis(), completion_fn=completion_fn)
+
 
 def _graph():
-    return build_graph(InMemorySaver())
+    # Text must actually share terms with the "what is x?" query used below —
+    # FakeRetriever's term-match scoring returns nothing for a non-matching corpus,
+    # which would make the real generator node abstain deterministically (correct
+    # behavior) and short-circuit the critic before the retry loop is ever exercised.
+    corpus = [Chunk(id="1", document_id="doc-a", text="x is a placeholder chunk")]
+    return build_graph(
+        InMemorySaver(), FakeRetriever(corpus=corpus), FakeReranker(), _fake_gateway()
+    )
 
 
 def test_route_after_critic_retries_under_cap() -> None:

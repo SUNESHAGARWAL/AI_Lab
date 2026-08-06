@@ -1,6 +1,6 @@
 from typing import TypedDict
 
-from core.models import ScoredChunk
+from core.models import Filters, ScoredChunk
 
 DEFAULT_MAX_RETRIES = 2
 
@@ -14,10 +14,14 @@ class AgentState(TypedDict):
 
     query: str
     rewritten_query: str | None
+    filters: Filters | None
     retrieved_chunks: list[ScoredChunk]
     reranked_chunks: list[ScoredChunk]
     answer: str | None
     citations: list[str]
+    confidence: float | None
+    abstained: bool
+    abstain_reason: str | None
     critic_feedback: str | None
     needs_retry: bool
     retry_count: int
@@ -25,14 +29,20 @@ class AgentState(TypedDict):
     human_approved: bool | None
 
 
-def initial_state(query: str, max_retries: int = DEFAULT_MAX_RETRIES) -> AgentState:
+def initial_state(
+    query: str, max_retries: int = DEFAULT_MAX_RETRIES, filters: Filters | None = None
+) -> AgentState:
     return AgentState(
         query=query,
         rewritten_query=None,
+        filters=filters,
         retrieved_chunks=[],
         reranked_chunks=[],
         answer=None,
         citations=[],
+        confidence=None,
+        abstained=False,
+        abstain_reason=None,
         critic_feedback=None,
         needs_retry=False,
         retry_count=0,

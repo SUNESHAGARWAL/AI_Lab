@@ -203,6 +203,7 @@ dependencies = [
     { name = "llm" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-settings" },
+    { name = "redis" },
     { name = "telemetry" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -216,6 +217,7 @@ requires-dist = [
     { name = "llm", editable = "packages/llm" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pydantic-settings", specifier = ">=2.5" },
+    { name = "redis", specifier = ">=5.0" },
     { name = "telemetry", editable = "packages/telemetry" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
 ]
