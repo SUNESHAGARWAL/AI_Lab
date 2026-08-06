@@ -10,6 +10,7 @@ from llm.config import GatewaySettings
 from llm.errors import AllProvidersExhausted, BudgetExceeded
 from llm.gateway import Gateway
 from llm.models import CompletionRequest, Message, Tier
+from llm.provider_usage import ProviderUsageTracker
 from llm.registry import ProviderModel, TierRegistry
 from pydantic import BaseModel
 
@@ -150,6 +151,78 @@ async def test_genuine_bad_request_propagates_without_fallback(fake_redis: FakeA
         )
 
     assert calls == ["p1/model"]  # never rotated to p2
+
+
+@pytest.mark.asyncio
+async def test_soft_daily_limit_skips_gemini_without_attempting_call(
+    fake_redis: FakeAsyncRedis,
+) -> None:
+    calls: list[str] = []
+
+    async def completion_fn(**kwargs: Any) -> Any:
+        calls.append(kwargs["model"])
+        return make_response("from groq")
+
+    gemini = ProviderModel(
+        provider="gemini",
+        model="gemini/gemini-2.0-flash",
+        max_concurrency=4,
+        daily_request_ceiling=10,
+    )
+    groq = ProviderModel(provider="groq", model="groq/model", max_concurrency=4)
+    settings = GatewaySettings(gemini_soft_limit_fraction=0.9)
+    gateway = Gateway(
+        settings=settings,
+        registry=_registry(gemini, groq),
+        redis_client=fake_redis,
+        completion_fn=completion_fn,
+    )
+
+    tracker = ProviderUsageTracker(fake_redis)
+    for _ in range(9):  # 9/10 = 90% >= 0.9 fraction -> at the soft limit
+        await tracker.increment("gemini")
+
+    result = await gateway.complete(
+        CompletionRequest(tier=Tier.FAST, messages=[Message(role="user", content="hi")])
+    )
+
+    assert calls == ["groq/model"]  # gemini never attempted
+    assert result.provider == "groq"
+
+
+@pytest.mark.asyncio
+async def test_gemini_is_attempted_when_below_soft_limit(fake_redis: FakeAsyncRedis) -> None:
+    calls: list[str] = []
+
+    async def completion_fn(**kwargs: Any) -> Any:
+        calls.append(kwargs["model"])
+        return make_response("from gemini")
+
+    gemini = ProviderModel(
+        provider="gemini",
+        model="gemini/gemini-2.0-flash",
+        max_concurrency=4,
+        daily_request_ceiling=10,
+    )
+    settings = GatewaySettings(gemini_soft_limit_fraction=0.9)
+    gateway = Gateway(
+        settings=settings,
+        registry=_registry(gemini),
+        redis_client=fake_redis,
+        completion_fn=completion_fn,
+    )
+
+    tracker = ProviderUsageTracker(fake_redis)
+    for _ in range(8):  # 8/10 = 80% < 0.9 fraction -> below the soft limit
+        await tracker.increment("gemini")
+
+    result = await gateway.complete(
+        CompletionRequest(tier=Tier.FAST, messages=[Message(role="user", content="hi")])
+    )
+
+    assert calls == ["gemini/gemini-2.0-flash"]
+    assert result.provider == "gemini"
+    assert await tracker.count("gemini") == 9  # incremented again on this success
 
 
 @pytest.mark.asyncio
