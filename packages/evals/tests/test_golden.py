@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
-from evals.golden import Difficulty, GoldenItem, QuestionType, load_golden_set
+from evals.golden import Difficulty, GoldenItem, QuestionType, append_golden_items, load_golden_set
 from pydantic import ValidationError
 
 
@@ -84,3 +84,24 @@ def test_golden_item_rejects_invalid_question_type() -> None:
 
     with pytest.raises(ValidationError):
         GoldenItem.model_validate(payload)
+
+
+def test_append_golden_items_creates_file_if_missing(tmp_path: Path) -> None:
+    path = tmp_path / "golden.jsonl"
+    item = GoldenItem.model_validate(_item())
+
+    append_golden_items([item], path)
+
+    assert load_golden_set(path) == [item]
+
+
+def test_append_golden_items_appends_without_clobbering_existing(tmp_path: Path) -> None:
+    path = tmp_path / "golden.jsonl"
+    first = GoldenItem.model_validate(_item(id="g-001"))
+    second = GoldenItem.model_validate(_item(id="g-002"))
+
+    append_golden_items([first], path)
+    append_golden_items([second], path)
+
+    loaded = load_golden_set(path)
+    assert [i.id for i in loaded] == ["g-001", "g-002"]

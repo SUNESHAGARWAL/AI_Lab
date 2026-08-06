@@ -42,6 +42,9 @@ async def test_aggregate_computes_metrics_over_scored_items() -> None:
     assert scorecard.aggregate_recall_at_k[3] == pytest.approx(recall_at_k(retrieved, relevant, 3))
     assert scorecard.aggregate_mrr_at_k[3] == pytest.approx(reciprocal_rank(retrieved, relevant, 3))
     assert scorecard.aggregate_ndcg_at_k[3] == pytest.approx(ndcg_at_k(retrieved, relevant, 3))
+    # default behavior (no rerank args passed) must stay unreranked
+    assert scorecard.reranked is False
+    assert scorecard.reranker_model is None
 
 
 @pytest.mark.asyncio

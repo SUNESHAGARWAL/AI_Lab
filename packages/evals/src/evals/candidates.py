@@ -75,6 +75,14 @@ def _has_review_progress(path: Path) -> bool:
     return False
 
 
+def _dump_jsonl(candidates: list[CandidateForReview], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        for candidate in candidates:
+            f.write(candidate.model_dump_json())
+            f.write("\n")
+
+
 def write_candidates(
     candidates: list[CandidateForReview], path: Path, *, force: bool = False
 ) -> None:
@@ -83,8 +91,23 @@ def write_candidates(
             f"{path} already has reviewed items (verified/relevant_chunk_ids/notes set) — "
             "refusing to overwrite in-progress review work. Pass --force to overwrite anyway."
         )
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        for candidate in candidates:
-            f.write(candidate.model_dump_json())
-            f.write("\n")
+    _dump_jsonl(candidates, path)
+
+
+def save_reviewed_candidates(candidates: list[CandidateForReview], path: Path) -> None:
+    """Guard-free overwrite for the interactive reviewer's own incremental saves —
+    write_candidates' refuse-unless-force guard exists to protect review progress
+    from generate-candidates, not from the review tool itself."""
+    _dump_jsonl(candidates, path)
+
+
+def load_candidates(path: Path) -> list[CandidateForReview]:
+    """One JSON object per line, same shape as evals.golden.load_golden_set. A
+    genuinely empty file returns []; a malformed line raises loudly."""
+    items = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        items.append(CandidateForReview.model_validate(json.loads(line)))
+    return items
