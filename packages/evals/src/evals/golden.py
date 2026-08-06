@@ -57,3 +57,14 @@ def load_golden_set(path: Path) -> list[GoldenItem]:
             continue
         items.append(GoldenItem.model_validate(json.loads(line)))
     return items
+
+
+def append_golden_items(items: list[GoldenItem], path: Path) -> None:
+    """Appends new lines to a golden-set JSONL file, creating it if missing. Does
+    not deduplicate against existing ids — callers (see evals.promote) are
+    responsible for filtering out ids that already exist before calling this."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as f:
+        for item in items:
+            f.write(item.model_dump_json())
+            f.write("\n")

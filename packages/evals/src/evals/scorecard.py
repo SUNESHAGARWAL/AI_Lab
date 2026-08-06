@@ -33,6 +33,8 @@ class Scorecard(BaseModel):
     generated_at: str
     golden_set_path: str
     retriever_model: str
+    reranked: bool = False
+    reranker_model: str | None = None
     k_values: list[int]
     total_items: int
     scored_items: int
@@ -63,6 +65,8 @@ async def aggregate(
     golden_set_path: str,
     retriever_model: str,
     generated_at: str,
+    reranked: bool = False,
+    reranker_model: str | None = None,
 ) -> Scorecard:
     per_item: list[PerItemScore] = []
     out_of_scope_excluded = 0
@@ -106,6 +110,8 @@ async def aggregate(
         generated_at=generated_at,
         golden_set_path=golden_set_path,
         retriever_model=retriever_model,
+        reranked=reranked,
+        reranker_model=reranker_model,
         k_values=k_values,
         total_items=len(golden_items),
         scored_items=len(scored),
@@ -118,10 +124,15 @@ async def aggregate(
 
 
 def render_table(scorecard: Scorecard) -> str:
+    reranked_line = f"reranked: {scorecard.reranked}"
+    if scorecard.reranked:
+        reranked_line += f"  (reranker model: {scorecard.reranker_model})"
+
     lines = [
         f"Retrieval scorecard — {scorecard.generated_at}",
         f"golden set: {scorecard.golden_set_path}",
         f"retriever model: {scorecard.retriever_model}",
+        reranked_line,
         f"total items: {scorecard.total_items}  "
         f"scored: {scorecard.scored_items}  "
         f"out-of-scope excluded: {scorecard.out_of_scope_excluded}",
