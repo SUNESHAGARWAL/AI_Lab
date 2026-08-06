@@ -1,29 +1,41 @@
+from core.ports import Reranker, Retriever
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 from api.graph.nodes import (
-    critic,
-    generator,
+    DEFAULT_RERANK_TOP_N,
     hitl_gate,
+    make_critic_node,
+    make_generator_node,
+    make_reranker_node,
+    make_retriever_node,
     planner,
-    reranker,
-    retriever,
     route_after_critic,
 )
 from api.graph.state import AgentState
+from llm import Gateway, Tier
 
 
-def build_graph(checkpointer: BaseCheckpointSaver) -> CompiledStateGraph:
-    """Wires the topology; the checkpointer is injected, not constructed here — same
-    dependency-injection shape as packages/llm.Gateway's constructor-supplied Redis
-    client."""
+def build_graph(
+    checkpointer: BaseCheckpointSaver,
+    retriever: Retriever,
+    reranker: Reranker,
+    gateway: Gateway,
+    *,
+    rerank_top_n: int = DEFAULT_RERANK_TOP_N,
+    generation_tier: Tier = Tier.REASON,
+    critic_tier: Tier = Tier.FAST,
+) -> CompiledStateGraph:
+    """Wires the topology; the checkpointer, retriever, reranker, and gateway are
+    injected, not constructed here — same dependency-injection shape as
+    packages/llm.Gateway's constructor-supplied Redis client."""
     builder = StateGraph(AgentState)
     builder.add_node("planner", planner)
-    builder.add_node("retriever", retriever)
-    builder.add_node("reranker", reranker)
-    builder.add_node("generator", generator)
-    builder.add_node("critic", critic)
+    builder.add_node("retriever", make_retriever_node(retriever))
+    builder.add_node("reranker", make_reranker_node(reranker, top_n=rerank_top_n))
+    builder.add_node("generator", make_generator_node(gateway, tier=generation_tier))
+    builder.add_node("critic", make_critic_node(gateway, tier=critic_tier))
     builder.add_node("hitl_gate", hitl_gate)
 
     builder.add_edge(START, "planner")
