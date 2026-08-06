@@ -7,14 +7,24 @@ import typer
 from core.models import Query, ScoredChunk
 from core.ports import Reranker, Retriever
 from psycopg_pool import AsyncConnectionPool
+from redis.asyncio import Redis
 from retrieval.retriever import PgVectorRetriever
 
 from evals.candidate_questions import SEED_QUESTIONS
 from evals.candidates import generate_candidates, load_candidates, write_candidates
-from evals.golden import append_golden_items, load_golden_set
+from evals.generation_run import build_generation_graph, run_golden_set_through_graph
+from evals.generation_scorecard import (
+    aggregate_generation_scorecard,
+    render_generation_table,
+    write_generation_report,
+)
+from evals.golden import GoldenItem, append_golden_items, load_golden_set
+from evals.judge import DEFAULT_JUDGE_TIER, GatewayJudgeModel
+from evals.judge_agreement import build_judge_agreement_report
 from evals.promote import promote_to_golden_set
 from evals.review import run_interactive_review
 from evals.scorecard import RetrieveFn, aggregate, render_table, write_report
+from llm import Gateway, Tier
 from retrieval import (
     DEFAULT_MODEL_NAME,
     DEFAULT_RERANKER_MODEL_NAME,
@@ -29,6 +39,7 @@ app = typer.Typer()
 logger = get_logger(__name__)
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://app:app@localhost:5432/app")
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_GOLDEN_SET = REPO_ROOT / "evals" / "datasets" / "retrieval_golden.jsonl"
 DEFAULT_REPORTS_DIR = REPO_ROOT / "evals" / "reports"
@@ -252,6 +263,173 @@ def promote_candidates_command(
         typer.echo(f"needs your manual decision ({len(result.needs_manual_decision)}):")
         for id_, question in result.needs_manual_decision:
             typer.echo(f"  {id_}: {question}")
+
+
+async def _existing_chunk_ids(pool: AsyncConnectionPool) -> set[str]:
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute("SELECT chunk_id FROM chunks")
+        rows = await cur.fetchall()
+    return {row[0] for row in rows}
+
+
+def _select_sample(
+    items: list[GoldenItem], sample: int | None, ids: str | None
+) -> list[GoldenItem]:
+    if ids:
+        wanted = {i.strip() for i in ids.split(",") if i.strip()}
+        selected = [item for item in items if item.id in wanted]
+        missing = wanted - {item.id for item in selected}
+        if missing:
+            raise ValueError(f"--ids referenced unknown golden-set id(s): {sorted(missing)}")
+        return selected
+    if sample is None:
+        return items
+    return items[:sample]
+
+
+async def _run_generation_eval_async(
+    golden_set: Path, sample: int | None, judge_tier: Tier, output_dir: Path
+) -> None:
+    golden_items = load_golden_set(golden_set)
+    selected = _select_sample(golden_items, sample, None)
+    logger.info(
+        "evals.generation_eval_started",
+        golden_set=str(golden_set),
+        total_items=len(golden_items),
+        sample_size=len(selected),
+    )
+
+    retriever, pool = await _open_retriever()
+    redis_client = Redis.from_url(REDIS_URL)
+    gateway = Gateway(redis_client=redis_client)
+    judge_model = GatewayJudgeModel(gateway, tier=judge_tier)
+    try:
+        graph = build_generation_graph(retriever, gateway)
+        results = await run_golden_set_through_graph(selected, graph)
+        if len(results) < len(selected):
+            logger.warning(
+                "evals.generation_items_skipped",
+                requested=len(selected),
+                completed=len(results),
+                skipped=len(selected) - len(results),
+            )
+        existing_chunk_ids = await _existing_chunk_ids(pool)
+        scorecard = await aggregate_generation_scorecard(
+            results,
+            gateway,
+            judge_model,
+            golden_set_path=str(golden_set),
+            existing_chunk_ids=existing_chunk_ids,
+            generated_at=datetime.now(UTC).isoformat(),
+            total_golden_items=len(golden_items),
+        )
+    finally:
+        await pool.close()
+
+    json_path, md_path = write_generation_report(scorecard, output_dir)
+    logger.info(
+        "evals.generation_scorecard_written",
+        json_path=str(json_path),
+        md_path=str(md_path),
+        sample_size=scorecard.sample_size,
+    )
+    typer.echo(render_generation_table(scorecard))
+
+
+def _parse_judge_tier(value: str) -> Tier:
+    try:
+        return Tier(value)
+    except ValueError as exc:
+        valid = [t.value for t in Tier]
+        raise typer.BadParameter(f"unknown tier {value!r} — must be one of {valid}") from exc
+
+
+_GENERATION_GOLDEN_SET_OPTION = typer.Option(
+    DEFAULT_GOLDEN_SET, help="Path to the golden-set JSONL file."
+)
+_GENERATION_SAMPLE_OPTION = typer.Option(
+    None, "--sample", help="Score only the first N golden items. Default: all items."
+)
+_GENERATION_JUDGE_TIER_OPTION = typer.Option(
+    DEFAULT_JUDGE_TIER.value, "--judge-tier", help="Gateway tier used for judge calls."
+)
+_GENERATION_OUTPUT_DIR_OPTION = typer.Option(
+    DEFAULT_REPORTS_DIR, help="Directory to write the generation scorecard to."
+)
+
+
+@app.command("run-generation-eval")
+def run_generation_eval(
+    golden_set: Path = _GENERATION_GOLDEN_SET_OPTION,
+    sample: int | None = _GENERATION_SAMPLE_OPTION,
+    judge_tier: str = _GENERATION_JUDGE_TIER_OPTION,
+    output_dir: Path = _GENERATION_OUTPUT_DIR_OPTION,
+) -> None:
+    """Layer 3: runs the real graph end-to-end per golden item and scores the
+    generated answer — faithfulness/answer_relevancy (deepeval, judged through our
+    gateway), citation_validity and appropriate_abstention (this package's own
+    metrics), context_precision (deterministic, from golden-set ground truth). Makes
+    real LLM calls — start with --sample 5 to check cost before running the full
+    set, and read the judge-agreement-report output before trusting these numbers
+    at scale."""
+    asyncio.run(
+        _run_generation_eval_async(golden_set, sample, _parse_judge_tier(judge_tier), output_dir)
+    )
+
+
+async def _judge_agreement_report_async(
+    golden_set: Path, sample: int, ids: str | None, judge_tier: Tier, output_dir: Path
+) -> None:
+    golden_items = load_golden_set(golden_set)
+    selected = _select_sample(golden_items, sample, ids)
+    logger.info("evals.judge_agreement_started", sample_size=len(selected))
+
+    retriever, pool = await _open_retriever()
+    redis_client = Redis.from_url(REDIS_URL)
+    gateway = Gateway(redis_client=redis_client)
+    judge_model = GatewayJudgeModel(gateway, tier=judge_tier)
+    try:
+        graph = build_generation_graph(retriever, gateway)
+        results = await run_golden_set_through_graph(selected, graph)
+        report = await build_judge_agreement_report(results, gateway, judge_model)
+    finally:
+        await pool.close()
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(UTC).isoformat().replace(":", "").replace("-", "").replace(".", "")
+    report_path = output_dir / f"judge_agreement_{timestamp}.md"
+    report_path.write_text(report, encoding="utf-8")
+    logger.info("evals.judge_agreement_written", path=str(report_path))
+    typer.echo(f"judge agreement report written to {report_path}")
+    typer.echo("This is a HUMAN VALIDATION step — read it before trusting run-generation-eval.")
+
+
+_JUDGE_AGREEMENT_SAMPLE_OPTION = typer.Option(
+    8, "--sample", help="Number of golden items (first N in file order) to include."
+)
+_JUDGE_AGREEMENT_IDS_OPTION = typer.Option(
+    None, "--ids", help="Comma-separated golden-item ids to include, overriding --sample."
+)
+
+
+@app.command("judge-agreement-report")
+def judge_agreement_report(
+    golden_set: Path = _GENERATION_GOLDEN_SET_OPTION,
+    sample: int = _JUDGE_AGREEMENT_SAMPLE_OPTION,
+    ids: str | None = _JUDGE_AGREEMENT_IDS_OPTION,
+    judge_tier: str = _GENERATION_JUDGE_TIER_OPTION,
+    output_dir: Path = _GENERATION_OUTPUT_DIR_OPTION,
+) -> None:
+    """Runs a small hand-pickable set of golden items through the real graph and
+    real judge, writing a human-readable Markdown report of every verdict alongside
+    the answer/citations it judged. NOT an aggregate scorecard — read this by hand
+    to confirm the judge is calling faithfulness/citation-support correctly before
+    trusting run-generation-eval's numbers at scale."""
+    asyncio.run(
+        _judge_agreement_report_async(
+            golden_set, sample, ids, _parse_judge_tier(judge_tier), output_dir
+        )
+    )
 
 
 if __name__ == "__main__":
