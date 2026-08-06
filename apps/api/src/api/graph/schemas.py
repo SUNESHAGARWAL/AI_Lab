@@ -1,3 +1,5 @@
+from enum import StrEnum
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -27,3 +29,26 @@ class CriticVerdict(BaseModel):
 
     faithful: bool
     reason: str | None = None
+
+
+class QueryIntent(StrEnum):
+    """Fixed intent set the planner classifies into — used later for filter
+    construction (see api.graph.nodes' planner system prompt)."""
+
+    FACTUAL_LOOKUP = "factual_lookup"
+    ROLE_SCOPED_APPLICABILITY = "role_scoped_applicability"
+    OUT_OF_SCOPE = "out_of_scope"
+
+
+class PlannerDecision(BaseModel):
+    """Structured output contract for the planner node — see its system prompt in
+    api.graph.nodes. `retry_budget` only gets a sanity floor here (`>= 0`); the upper
+    bound is `state["max_retries"]`, a runtime value the schema can't know about, so
+    the planner node clamps it after parsing rather than the schema enforcing it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    rewritten_query: str
+    intent: QueryIntent
+    retry_budget: int = Field(ge=0)
+    abstain_reason: str | None = None

@@ -2,6 +2,8 @@ from typing import TypedDict
 
 from core.models import Filters, ScoredChunk
 
+from api.graph.schemas import QueryIntent
+
 DEFAULT_MAX_RETRIES = 2
 
 
@@ -14,6 +16,7 @@ class AgentState(TypedDict):
 
     query: str
     rewritten_query: str | None
+    intent: QueryIntent | None
     filters: Filters | None
     retrieved_chunks: list[ScoredChunk]
     reranked_chunks: list[ScoredChunk]
@@ -26,15 +29,20 @@ class AgentState(TypedDict):
     needs_retry: bool
     retry_count: int
     max_retries: int
+    retry_budget: int
     human_approved: bool | None
 
 
 def initial_state(
-    query: str, max_retries: int = DEFAULT_MAX_RETRIES, filters: Filters | None = None
+    query: str,
+    max_retries: int = DEFAULT_MAX_RETRIES,
+    filters: Filters | None = None,
+    retry_budget: int | None = None,
 ) -> AgentState:
     return AgentState(
         query=query,
         rewritten_query=None,
+        intent=None,
         filters=filters,
         retrieved_chunks=[],
         reranked_chunks=[],
@@ -47,5 +55,6 @@ def initial_state(
         needs_retry=False,
         retry_count=0,
         max_retries=max_retries,
+        retry_budget=retry_budget if retry_budget is not None else max_retries,
         human_approved=None,
     )

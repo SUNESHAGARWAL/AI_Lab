@@ -1,6 +1,5 @@
-"""Graph nodes. planner is still a stub; retriever/reranker/generator/critic have real
-logic. Nodes never call each other directly — the graph in api.graph.build owns all
-routing."""
+"""Graph nodes — all real logic now. Nodes never call each other directly — the graph
+in api.graph.build owns all routing."""
 
 from collections.abc import Awaitable, Callable
 from typing import Any, Literal
@@ -9,14 +8,91 @@ from core.models import Query, ScoredChunk
 from core.ports import Reranker, Retriever
 from langgraph.types import interrupt
 
-from api.graph.schemas import CriticVerdict, GeneratedAnswer
+from api.graph.schemas import CriticVerdict, GeneratedAnswer, PlannerDecision, QueryIntent
 from api.graph.state import AgentState
 from llm import CompletionRequest, Gateway, Message, Tier
 
 
-async def planner(state: AgentState) -> dict[str, Any]:
-    """Query rewrite / disambiguation. Stub: passes the query through unchanged."""
-    return {"rewritten_query": state["query"]}
+def _planner_system_prompt(max_retries: int) -> str:
+    return (
+        "You are a query planner for a citation-grounded question-answering system. "
+        "Given the user's raw question, do three things: "
+        "1) Rewrite it into a version optimized for retrieval — expand vague "
+        "phrasing, resolve pronouns and ambiguous references using context from the "
+        "question itself, and add relevant terminology if the intent is clear. If "
+        "the question is already clear and well-formed, the rewrite can match the "
+        "original. "
+        "2) Classify the intent as exactly one of: `factual_lookup` (a direct "
+        "factual question answerable from a corpus), `role_scoped_applicability` (a "
+        "question about whether or how something applies to a specific role, "
+        "situation, or context), or `out_of_scope` (not answerable by this system at "
+        "all — off-topic, harmful, or nonsensical). "
+        f"3) Set retry_budget to an integer between 0 and {max_retries}: how many "
+        "critic-driven regeneration attempts this query is worth — 0 or 1 for a "
+        f"simple, unambiguous factual lookup, up to {max_retries} for a complex "
+        "multi-part or nuanced question. "
+        "If intent is `out_of_scope`, briefly explain why in `abstain_reason`."
+    )
+
+
+def _build_planner_messages(query: str, max_retries: int) -> list[Message]:
+    return [
+        Message(role="system", content=_planner_system_prompt(max_retries)),
+        Message(role="user", content=query),
+    ]
+
+
+def make_planner_node(
+    gateway: Gateway, tier: Tier = Tier.FAST
+) -> Callable[[AgentState], Awaitable[dict[str, Any]]]:
+    """Binds an llm.Gateway into a graph node — same build-time DI shape as the other
+    LLM-backed nodes. Fast tier, cheap: a short rewrite + classification + budget
+    call, not a generation pass. See api.graph.schemas.PlannerDecision for the
+    response contract. An out-of-scope classification sets abstained=True directly
+    here — api.graph.build routes straight to hitl_gate on that, skipping retrieval
+    and generation entirely."""
+
+    async def planner_node(state: AgentState) -> dict[str, Any]:
+        request = CompletionRequest(
+            tier=tier,
+            messages=_build_planner_messages(state["query"], state["max_retries"]),
+            response_model=PlannerDecision,
+            max_tokens=300,
+        )
+        result = await gateway.complete(request)
+        if not isinstance(result.parsed, PlannerDecision):
+            raise TypeError(
+                "expected a PlannerDecision from gateway.complete() with "
+                "response_model set — this indicates a Gateway contract violation"
+            )
+
+        parsed = result.parsed
+        retry_budget = max(0, min(parsed.retry_budget, state["max_retries"]))
+
+        update: dict[str, Any] = {
+            "rewritten_query": parsed.rewritten_query,
+            "intent": parsed.intent,
+            "retry_budget": retry_budget,
+        }
+        if parsed.intent is QueryIntent.OUT_OF_SCOPE:
+            update.update(
+                {
+                    "abstained": True,
+                    "abstain_reason": (
+                        parsed.abstain_reason or "query is out of scope for this system"
+                    ),
+                    "answer": "",
+                    "citations": [],
+                    "confidence": 0.0,
+                }
+            )
+        return update
+
+    return planner_node
+
+
+def route_after_planner(state: AgentState) -> Literal["continue", "abstain"]:
+    return "abstain" if state["abstained"] else "continue"
 
 
 def make_retriever_node(
@@ -220,13 +296,81 @@ def make_critic_node(
 
 
 def route_after_critic(state: AgentState) -> Literal["retry", "proceed"]:
-    if state["needs_retry"] and state["retry_count"] < state["max_retries"]:
+    # max_retries is the absolute hard ceiling, never bypassable; retry_budget is the
+    # planner's per-query sub-cap beneath it (defaults to max_retries when unset, so
+    # this is identical to a flat max_retries check unless the planner lowered it).
+    effective_cap = min(state["retry_budget"], state["max_retries"])
+    if state["needs_retry"] and state["retry_count"] < effective_cap:
         return "retry"
     return "proceed"
 
 
-async def hitl_gate(state: AgentState) -> dict[str, Any]:
-    """Stub: pauses for human approval of the final answer via interrupt() — the
-    only human-in-the-loop mechanism this project uses, per ADR 0001."""
-    decision = interrupt({"answer": state["answer"], "citations": state["citations"]})
-    return {"human_approved": bool(decision)}
+DEFAULT_CONFIDENCE_THRESHOLD = 0.7
+
+
+def _needs_human_review(state: AgentState, confidence_threshold: float) -> bool:
+    if state["abstained"]:
+        return True
+    confidence = state["confidence"]
+    # Missing confidence fails safe toward triggering review, not skipping it — a
+    # node that didn't set confidence is a bug, not a green light.
+    return confidence is None or confidence < confidence_threshold
+
+
+def _apply_hitl_decision(decision: Any) -> dict[str, Any]:
+    """Resume contract: a bare bool (True/False -> accept/reject) or a dict
+    {"decision": "accept" | "reject" | "edit", ...}. "edit" may carry "answer"/
+    "citations" to overwrite the draft. Anything unrecognized falls back to reject —
+    fail toward not auto-approving on a malformed resume payload."""
+    if isinstance(decision, dict):
+        outcome = decision.get("decision")
+    else:
+        outcome = "accept" if decision else "reject"
+
+    if outcome == "accept":
+        return {"human_approved": True}
+    if outcome == "edit" and isinstance(decision, dict):
+        update: dict[str, Any] = {"human_approved": True}
+        if "answer" in decision:
+            update["answer"] = decision["answer"]
+        if "citations" in decision:
+            update["citations"] = decision["citations"]
+        return update
+    return {"human_approved": False}
+
+
+def make_hitl_gate_node(
+    confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
+) -> Callable[[AgentState], Awaitable[dict[str, Any]]]:
+    """No LLM gateway or core.ports adapter involved — just langgraph.types.interrupt,
+    the only human-in-the-loop mechanism this project uses (ADR 0001). A confident,
+    non-abstained answer skips the interrupt entirely and passes straight through in
+    the same ainvoke() call. Otherwise the payload shape depends on why a human is
+    being asked to look: an out-of-scope query (no draft to show) gets a rephrase/
+    contact-a-human framing; everything else gets the draft answer and citations to
+    accept, reject, or edit."""
+
+    async def hitl_gate_node(state: AgentState) -> dict[str, Any]:
+        if not _needs_human_review(state, confidence_threshold):
+            return {"human_approved": True}  # auto-approved: no review was needed
+
+        if state["intent"] is QueryIntent.OUT_OF_SCOPE:
+            payload = {
+                "type": "out_of_scope",
+                "message": "This question is outside what this system can help with.",
+                "reason": state["abstain_reason"],
+                "suggestion": "Try rephrasing your question, or contact a human for help.",
+            }
+        else:
+            payload = {
+                "type": "review",
+                "answer": state["answer"],
+                "citations": state["citations"],
+                "confidence": state["confidence"],
+                "abstained": state["abstained"],
+                "abstain_reason": state["abstain_reason"],
+            }
+
+        return _apply_hitl_decision(interrupt(payload))
+
+    return hitl_gate_node
