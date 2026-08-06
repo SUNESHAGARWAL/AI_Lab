@@ -4,8 +4,15 @@ version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "sentence-transformers>=3.1",
-    "psycopg[binary]>=3.2",
+    "psycopg[binary,pool]>=3.2",
+    "pgvector>=0.3",
+    "alembic>=1.13",
+    "sqlalchemy>=2.0",
+    "core",
 ]
+
+[tool.uv.sources]
+core = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

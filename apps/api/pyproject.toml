@@ -12,12 +12,14 @@ dependencies = [
     "redis>=5.0",
     "core",
     "llm",
+    "retrieval",
     "telemetry",
 ]
 
 [tool.uv.sources]
 core = { workspace = true }
 llm = { workspace = true }
+retrieval = { workspace = true }
 telemetry = { workspace = true }
 
 [build-system]

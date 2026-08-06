@@ -1,4 +1,4 @@
-# Project: <NAME> — agentic RAG over <CORPUS>
+# Project: <NAME> — agentic RAG over EU AI Act & GDPR
 
 A citation-grounded question-answering product. Users ask in plain language and get
 answers with verifiable citations, or an honest abstention. Runs entirely on free-tier
@@ -41,7 +41,7 @@ Postgres + pgvector for storage, LiteLLM for provider routing.
 
 ```
 just dev                      # docker compose up: api, web, postgres, redis
-uv run pytest -m "not llm"    # fast deterministic tests
+uv run pytest -m "not llm and not integration"    # fast deterministic tests
 just evals-fast               # layers 1+2 (deterministic, free)
 just evals-full               # layers 3+4 (judge model, nightly only)
 just ingest                   # rebuild corpus index
