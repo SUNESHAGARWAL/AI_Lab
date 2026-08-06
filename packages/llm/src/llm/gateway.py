@@ -50,6 +50,7 @@ from llm.cache import ResponseCache
 from llm.config import GatewaySettings
 from llm.errors import AllProvidersExhausted, BudgetExceeded
 from llm.models import CompletionRequest, CompletionResult, Tier, Usage
+from llm.provider_usage import ProviderUsageTracker
 from llm.registry import ProviderModel, TierRegistry, build_default_registry
 from telemetry import get_logger
 
@@ -141,6 +142,7 @@ class Gateway:
         self._redis = redis_client or Redis.from_url(self._settings.redis_url)
         self._cache = ResponseCache(self._redis, self._settings, embedder)
         self._budget = BudgetGuard(self._redis, self._settings)
+        self._usage_tracker = ProviderUsageTracker(self._redis)
         self._completion_fn = completion_fn
         self._logger = logger or get_logger(__name__)
         self._semaphores: dict[str, asyncio.Semaphore] = {}
@@ -187,6 +189,21 @@ class Gateway:
         total_attempts = 0
         last_exc: BaseException | None = None
         for provider in chain:
+            near_ceiling = (
+                provider.daily_request_ceiling is not None
+                and await self._usage_tracker.is_near_ceiling(
+                    provider.provider,
+                    provider.daily_request_ceiling,
+                    self._settings.gemini_soft_limit_fraction,
+                )
+            )
+            if near_ceiling:
+                self._logger.warning(
+                    "llm.provider_soft_limit_skip",
+                    provider=provider.provider,
+                    tier=request.tier.value,
+                )
+                continue
             try:
                 response, parsed, attempts = await self._call_provider(provider, request)
             except Exception as exc:
@@ -265,6 +282,8 @@ class Gateway:
             total_tokens=response.usage.total_tokens,
         )
         await self._budget.reconcile(reservation, usage.total_tokens)
+        if provider.daily_request_ceiling is not None:
+            await self._usage_tracker.increment(provider.provider)
 
         try:
             prompt_cost, completion_cost = litellm.cost_per_token(
