@@ -3,18 +3,28 @@ name = "evals"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    # ragas 0.4.3 (latest on PyPI) currently fails to import — see
+    # docs/adr/0004-generation-eval-judge-via-deepeval-not-ragas.md. Left pinned,
+    # unused; deepeval is the judge framework Layer 3 actually uses.
     "deepeval==4.1.5",
     "ragas",
     "typer>=0.12",
+    "langgraph==1.2.10",
     "core",
     "retrieval",
     "telemetry",
+    "api",
 ]
 
 [tool.uv.sources]
 core = { workspace = true }
 retrieval = { workspace = true }
 telemetry = { workspace = true }
+# Layer 3 runs the real graph end-to-end; see the ADR above for why packages/evals
+# depending on apps/api is a deliberate, narrow exception (apps/api is a leaf node —
+# nothing depends on it — so this creates no cycle and leaks nothing into product
+# runtime code).
+api = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

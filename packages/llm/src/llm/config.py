@@ -22,7 +22,12 @@ class GatewaySettings(BaseSettings):
     cache_semantic_max_candidates: int = 200
     cache_semantic_distance_threshold: float = 0.05
 
-    per_request_token_ceiling: int = 4000
+    # 4000 was too tight for real generator prompts: DEFAULT_RERANK_TOP_N (5) full
+    # AI Act/GDPR article chunks plus the question can estimate north of 5000 tokens
+    # on its own before max_tokens is even added — discovered running Layer 3's
+    # generation eval against the real corpus (see evals/cli.py's
+    # run-generation-eval), not a theoretical concern.
+    per_request_token_ceiling: int = 8000
     per_day_token_ceiling: int = 200_000
 
     provider_concurrency_overrides: dict[str, int] = {}

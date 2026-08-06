@@ -10,8 +10,16 @@ test:
 evals-fast:
     uv run --package evals python -m evals.cli run-retrieval
 
+evals-generation:
+    uv run --package evals python -m evals.cli run-generation-eval
+
+evals-judge-agreement:
+    uv run --package evals python -m evals.cli judge-agreement-report
+
 evals-full:
-    @echo "stub: layers 3+4 (judge model, nightly only) — lands with packages/evals"
+    @echo "layer 3 (generation quality, judge model): just evals-generation"
+    @echo "read the judge-agreement report first: just evals-judge-agreement"
+    @echo "layer 4: not yet built"
 
 ingest:
     uv run --package ingest python -m ingest.cli ingest-corpus
