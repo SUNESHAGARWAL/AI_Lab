@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+from core.testing import FakeReranker
 from fastapi import FastAPI
 from redis.asyncio import Redis
 
@@ -10,7 +11,6 @@ from api.graph.checkpointer import postgres_checkpointer
 from api.routes.health import router as health_router
 from llm import Gateway
 from retrieval import (
-    CrossEncoderReranker,
     PgVectorRetriever,
     SentenceTransformerEmbedder,
     apply_migrations,
@@ -33,7 +33,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await pool.open(wait=True, timeout=10)
         embedder = SentenceTransformerEmbedder()
         retriever = PgVectorRetriever(pool, embedder)
-        reranker = CrossEncoderReranker()
+        # Reranking was built (packages/retrieval/src/retrieval/reranker.py) and
+        # evaluated (`uv run --package evals python -m evals.cli run-retrieval
+        # --rerank`) — BAAI/bge-reranker-base degraded every metric on the real
+        # golden set (see docs/adr/0003-reranking-evaluated-and-deferred.md).
+        # Deferred until a domain-tuned reranker can be evaluated; identity
+        # passthrough keeps the graph's raw PgVectorRetriever cosine order intact.
+        reranker = FakeReranker()
         # llm.GatewaySettings reads LLM_REDIS_URL (its own env_prefix), a different
         # var from apps/api's own REDIS_URL — pass our already-validated Redis client
         # explicitly so the app doesn't depend on the two happening to match.
