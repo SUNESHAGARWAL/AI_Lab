@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "generate:types": "uv run python ../../scripts/gen_event_types.py | npx json-schema-to-typescript --unreachableDefinitions > lib/types/graph-events.generated.ts"
   },
   "dependencies": {
     "ai": "6.0.204",
@@ -16,11 +17,14 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^22.10.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "eslint": "^9.15.0",
     "eslint-config-next": "^15.4.0",
+    "json-schema-to-typescript": "^15.0.4",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.7.0"
   }
 }

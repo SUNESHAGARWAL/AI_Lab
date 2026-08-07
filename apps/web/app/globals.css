@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+/* Locked design tokens — see CLAUDE.md session scope. No other colors or fonts
+   get introduced without asking. */
+@theme {
+  --color-paper: #f4f1ea;
+  --color-ink: #1a1a17;
+  --color-rule: #c9c3b6;
+  --color-citation: #3a5a78;
+  --color-active: #b8472f;
+  --color-abstain: #7a6e52;
+
+  --font-serif: var(--font-source-serif), Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
