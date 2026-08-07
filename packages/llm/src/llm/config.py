@@ -22,13 +22,23 @@ class GatewaySettings(BaseSettings):
     cache_semantic_max_candidates: int = 200
     cache_semantic_distance_threshold: float = 0.05
 
-    # 4000 was too tight for real generator prompts: DEFAULT_RERANK_TOP_N (5) full
-    # AI Act/GDPR article chunks plus the question can estimate north of 5000 tokens
-    # on its own before max_tokens is even added — discovered running Layer 3's
-    # generation eval against the real corpus (see evals/cli.py's
-    # run-generation-eval), not a theoretical concern.
-    per_request_token_ceiling: int = 8000
-    per_day_token_ceiling: int = 200_000
+    # 8000 was too tight once the generator's max_tokens was raised to 4096 (see
+    # api.graph.nodes.make_generator_node's comment: deepseek/deepseek-reasoner, the
+    # reason tier's primary model, spends real completion tokens on an internal
+    # reasoning pass before visible content, verified empirically). Worst case:
+    # DEFAULT_RERANK_TOP_N (5) full AI Act/GDPR article chunks (~5000 tokens) + the
+    # question + 4096 max_tokens can approach 9500-10000 before this ceiling is
+    # even relevant — 16000 leaves real headroom, not just enough to clear today's
+    # specific number.
+    per_request_token_ceiling: int = 16000
+    # 200_000 was sized for Groq-free-tier-style caution and tripped mid-way
+    # through a real 36-item Layer 3 run within one debugging day. Per
+    # docs/adr/0005-deepseek-primary-groq-free-fallback.md's cost model, DeepSeek
+    # (the primary provider) prices this project's whole estimated *monthly* usage
+    # (1.8M-10.8M tokens) at $0.32-1.89 total — a 2,000,000/day self-imposed cap
+    # costs well under $1/day even fully spent, while still being a real ceiling,
+    # not effectively unlimited.
+    per_day_token_ceiling: int = 2_000_000
 
     provider_concurrency_overrides: dict[str, int] = {}
     provider_rpm_overrides: dict[str, int] = {}

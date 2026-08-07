@@ -13,6 +13,7 @@ dependencies = [
     "core",
     "retrieval",
     "telemetry",
+    "llm",
     "api",
 ]
 
@@ -20,6 +21,9 @@ dependencies = [
 core = { workspace = true }
 retrieval = { workspace = true }
 telemetry = { workspace = true }
+# evals/judge.py imports llm directly (Gateway, complete_json, etc.) — pin it
+# explicitly rather than relying on it arriving transitively via api.
+llm = { workspace = true }
 # Layer 3 runs the real graph end-to-end; see the ADR above for why packages/evals
 # depending on apps/api is a deliberate, narrow exception (apps/api is a leaf node —
 # nothing depends on it — so this creates no cycle and leaks nothing into product

@@ -118,6 +118,105 @@ async def test_fallback_moves_on_from_mistyped_but_real_429(fake_redis: FakeAsyn
     assert calls == ["p1/model", "p2/model"]
 
 
+def _provider_unavailable_error(status_code: int, message: str, model: str) -> BadRequestError:
+    response = httpx.Response(
+        status_code=status_code, request=httpx.Request("GET", "https://example.com")
+    )
+    return BadRequestError(message=message, model=model, llm_provider="test", response=response)
+
+
+@pytest.mark.asyncio
+async def test_fallback_moves_to_next_provider_on_insufficient_balance(
+    fake_redis: FakeAsyncRedis,
+) -> None:
+    """Regression: a live run against DeepSeek surfaced a 402 "Insufficient
+    Balance" mapped to BadRequestError — about DeepSeek's account, not a malformed
+    request. Must fall through to the next provider, same as a 429."""
+    calls: list[str] = []
+
+    async def completion_fn(**kwargs: Any) -> Any:
+        model = kwargs["model"]
+        calls.append(model)
+        if model == "p1/model":
+            raise _provider_unavailable_error(402, "Insufficient Balance", model)
+        return make_response("from p2")
+
+    provider1 = ProviderModel(provider="p1", model="p1/model", max_concurrency=4)
+    provider2 = ProviderModel(provider="p2", model="p2/model", max_concurrency=4)
+    gateway = Gateway(
+        settings=GatewaySettings(same_provider_retry_attempts=3),
+        registry=_registry(provider1, provider2),
+        redis_client=fake_redis,
+        completion_fn=completion_fn,
+    )
+
+    result = await gateway.complete(
+        CompletionRequest(tier=Tier.FAST, messages=[Message(role="user", content="hi")])
+    )
+
+    assert result.provider == "p2"
+    # p1 called exactly once — no same-provider retry for a 402, unlike a 429.
+    assert calls == ["p1/model", "p2/model"]
+
+
+@pytest.mark.asyncio
+async def test_fallback_moves_to_next_provider_on_auth_error(fake_redis: FakeAsyncRedis) -> None:
+    calls: list[str] = []
+
+    async def completion_fn(**kwargs: Any) -> Any:
+        model = kwargs["model"]
+        calls.append(model)
+        if model == "p1/model":
+            raise _provider_unavailable_error(401, "invalid api key", model)
+        return make_response("from p2")
+
+    provider1 = ProviderModel(provider="p1", model="p1/model", max_concurrency=4)
+    provider2 = ProviderModel(provider="p2", model="p2/model", max_concurrency=4)
+    gateway = Gateway(
+        settings=GatewaySettings(same_provider_retry_attempts=1),
+        registry=_registry(provider1, provider2),
+        redis_client=fake_redis,
+        completion_fn=completion_fn,
+    )
+
+    result = await gateway.complete(
+        CompletionRequest(tier=Tier.FAST, messages=[Message(role="user", content="hi")])
+    )
+
+    assert result.provider == "p2"
+    assert calls == ["p1/model", "p2/model"]
+
+
+@pytest.mark.asyncio
+async def test_fallback_moves_to_next_provider_on_model_not_found(
+    fake_redis: FakeAsyncRedis,
+) -> None:
+    calls: list[str] = []
+
+    async def completion_fn(**kwargs: Any) -> Any:
+        model = kwargs["model"]
+        calls.append(model)
+        if model == "p1/model":
+            raise _provider_unavailable_error(404, "model not found", model)
+        return make_response("from p2")
+
+    provider1 = ProviderModel(provider="p1", model="p1/model", max_concurrency=4)
+    provider2 = ProviderModel(provider="p2", model="p2/model", max_concurrency=4)
+    gateway = Gateway(
+        settings=GatewaySettings(same_provider_retry_attempts=1),
+        registry=_registry(provider1, provider2),
+        redis_client=fake_redis,
+        completion_fn=completion_fn,
+    )
+
+    result = await gateway.complete(
+        CompletionRequest(tier=Tier.FAST, messages=[Message(role="user", content="hi")])
+    )
+
+    assert result.provider == "p2"
+    assert calls == ["p1/model", "p2/model"]
+
+
 @pytest.mark.asyncio
 async def test_genuine_bad_request_propagates_without_fallback(fake_redis: FakeAsyncRedis) -> None:
     """A real 400 (caller bug — malformed request) must NOT be silently retried or

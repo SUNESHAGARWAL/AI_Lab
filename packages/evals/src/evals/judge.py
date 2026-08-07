@@ -6,7 +6,7 @@ langchain-coupled BaseRagasLLM."""
 from deepeval.models.base_model import DeepEvalBaseLLM
 from pydantic import BaseModel, ConfigDict
 
-from llm import CompletionRequest, Gateway, Message, Tier
+from llm import CompletionRequest, Gateway, Message, Tier, complete_json
 
 DEFAULT_JUDGE_TIER = Tier.FAST
 
@@ -66,24 +66,22 @@ async def judge_citation_support(
     answer: str,
     tier: Tier = DEFAULT_JUDGE_TIER,
 ) -> CitationSupportVerdict:
-    """Our own structured-output judge call (Pydantic response_model, not deepeval) —
-    same pattern as apps.api.graph.nodes' critic node."""
-    request = CompletionRequest(
-        tier=tier,
-        messages=[
-            Message(role="system", content=_CITATION_SUPPORT_SYSTEM_PROMPT),
-            Message(
-                role="user",
-                content=f"Answer:\n{answer}\n\nCited chunk:\n{chunk_text}",
-            ),
-        ],
-        response_model=CitationSupportVerdict,
-        max_tokens=150,
-    )
-    result = await gateway.complete(request)
-    if not isinstance(result.parsed, CitationSupportVerdict):
-        raise TypeError(
-            "expected a CitationSupportVerdict from gateway.complete() with "
-            "response_model set — this indicates a Gateway contract violation"
-        )
-    return result.parsed
+    """Our own structured judge call — via llm.complete_json (plain-text completion
+    + robust parsing), NOT CompletionRequest.response_model. Groq's small models
+    (both this project's registry entries, per litellm.supports_response_schema)
+    don't support native structured output; requesting it forces LiteLLM into a
+    tool-calling workaround these models invoke unreliably, surfacing as Groq's
+    tool_use_failed error. complete_json sidesteps that entirely — see
+    packages/llm/src/llm/prompted_json.py."""
+    messages = [
+        Message(role="system", content=_CITATION_SUPPORT_SYSTEM_PROMPT),
+        Message(
+            role="user",
+            content=f"Answer:\n{answer}\n\nCited chunk:\n{chunk_text}",
+        ),
+    ]
+    # 350, not a tighter number: this tier's Groq fallback chain includes a
+    # gpt-oss model, which spends part of its budget on an internal reasoning pass
+    # before visible content — verified empirically that a too-tight max_tokens can
+    # return empty content on that model. See llm/registry.py's docstring.
+    return await complete_json(gateway, tier, messages, CitationSupportVerdict, max_tokens=350)

@@ -11,7 +11,7 @@ from langgraph.graph.state import CompiledStateGraph
 from pydantic import BaseModel, ConfigDict
 
 from evals.golden import Difficulty, GoldenItem, QuestionType
-from llm import AllProvidersExhausted, BudgetExceeded, Gateway
+from llm import Gateway
 from telemetry import get_logger
 
 logger = get_logger(__name__)
@@ -51,16 +51,20 @@ async def run_golden_set_through_graph(
     fields for its interrupt payload, it doesn't gate their presence, and there is
     no human in this loop to resume the pause.
 
-    A single item's real free-tier provider failure (rate limit exhausting every
-    fallback in a tier's chain, or an oversized prompt tripping the per-request
-    budget guard) does not abort the whole batch — it's logged loudly and that item
-    is skipped, so a transient 429 on item 3 doesn't cost the other 35 results."""
+    A single item's real free-tier provider failure — rate limit exhaustion, an
+    oversized prompt tripping the budget guard, or any other node-level error (e.g.
+    a provider's own tool_use_failed-style rejection surfacing as a raw
+    litellm.BadRequestError, not one of the gateway's own named exceptions) — does
+    not abort the whole batch. Broad except is deliberate here, matching the same
+    reasoning already applied to metric scoring in generation_scorecard.py/
+    judge_agreement.py: it's logged loudly and that item is skipped, so one item's
+    failure on item 3 doesn't cost the other 35 results."""
     results: list[GenerationRunResult] = []
     for item in golden_items:
         config = {"configurable": {"thread_id": item.id}}
         try:
             state = await graph.ainvoke(initial_state(item.question), config=config)
-        except (AllProvidersExhausted, BudgetExceeded) as exc:
+        except Exception as exc:  # noqa: BLE001 — see docstring
             logger.warning(
                 "evals.generation_item_failed",
                 id=item.id,
