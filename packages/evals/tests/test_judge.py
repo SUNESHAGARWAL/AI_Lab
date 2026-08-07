@@ -8,7 +8,7 @@ from evals.judge import DEFAULT_JUDGE_TIER, GatewayJudgeModel, judge_citation_su
 from fakeredis import FakeAsyncRedis
 from llm.config import GatewaySettings
 
-from llm import AllProvidersExhausted, Gateway
+from llm import Gateway, PromptedJsonError
 
 # Local copy of packages/llm/tests/conftest.py's make_response/make_completion_fn
 # pattern — not importable across package test dirs, so duplicated here, same as
@@ -81,13 +81,17 @@ async def test_judge_citation_support_parses_valid_verdict() -> None:
     assert verdict.supports is True
     assert verdict.reason == "the chunk directly states this"
     assert len(calls) == 1
+    assert calls[0]["response_format"] is None  # never requests tool-calling
 
 
 @pytest.mark.asyncio
-async def test_judge_citation_support_raises_on_malformed_response() -> None:
-    completion_fn, _ = _make_completion_fn("not json at all")
+async def test_judge_citation_support_raises_after_repair_retry_also_fails() -> None:
+    # Same malformed text every call — proves this raises PromptedJsonError (from
+    # complete_json's own repair-retry logic) rather than a gateway-level error,
+    # since no response_model is ever requested anymore.
+    completion_fn, calls = _make_completion_fn("not json at all")
 
-    with pytest.raises(AllProvidersExhausted):
-        await judge_citation_support(
-            _gateway(completion_fn, same_provider_retry_attempts=1), "chunk text", "answer text"
-        )
+    with pytest.raises(PromptedJsonError):
+        await judge_citation_support(_gateway(completion_fn), "chunk text", "answer text")
+
+    assert len(calls) == 2  # initial attempt + exactly one repair retry

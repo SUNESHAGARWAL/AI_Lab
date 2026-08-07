@@ -94,6 +94,21 @@ def _is_retryable(exc: BaseException) -> bool:
     return status_code is not None and (status_code == 429 or status_code >= 500)
 
 
+_PROVIDER_UNAVAILABLE_STATUS_CODES = {401, 402, 403, 404}
+
+
+def _is_provider_unavailable(exc: BaseException) -> bool:
+    """401/402/403/404 are about THIS provider's auth, billing, permissions, or
+    model availability — never about malformed request content (that's a plain 400
+    with none of these codes). A live run against DeepSeek's API surfaced a real
+    402 "Insufficient Balance" mapped to `BadRequestError` — the same exception
+    class `_is_retryable`'s own docstring already flags as an unreliable signal on
+    its own. Worth trying the next provider in the chain, same reasoning as a 429
+    (see `_is_retryable`) — but never worth retrying the SAME provider, since
+    nothing about retrying changes an empty balance or a bad key."""
+    return _extract_status_code(exc) in _PROVIDER_UNAVAILABLE_STATUS_CODES
+
+
 def _extract_retry_after(exc: BaseException) -> float | None:
     headers = getattr(exc, "headers", None) or {}
     retry_after = headers.get("retry-after") or headers.get("Retry-After")
@@ -207,20 +222,35 @@ class Gateway:
             try:
                 response, parsed, attempts = await self._call_provider(provider, request)
             except Exception as exc:
-                if not _is_retryable(exc):
-                    await self._budget.release(reservation)
-                    raise
-                total_attempts += self._settings.same_provider_retry_attempts
-                last_exc = exc
-                self._logger.warning(
-                    "llm.provider_failed",
-                    provider=provider.provider,
-                    model=provider.model,
-                    tier=request.tier.value,
-                    error=type(exc).__name__,
-                    status_code=_extract_status_code(exc),
-                )
-                continue
+                if _is_retryable(exc):
+                    total_attempts += self._settings.same_provider_retry_attempts
+                    last_exc = exc
+                    self._logger.warning(
+                        "llm.provider_failed",
+                        provider=provider.provider,
+                        model=provider.model,
+                        tier=request.tier.value,
+                        error=type(exc).__name__,
+                        status_code=_extract_status_code(exc),
+                    )
+                    continue
+                if _is_provider_unavailable(exc):
+                    # Auth/billing/permission/not-found — about THIS provider, not
+                    # a malformed request our own code sent. No same-provider retry
+                    # (pointless), but still move to the next provider in the chain.
+                    total_attempts += 1
+                    last_exc = exc
+                    self._logger.warning(
+                        "llm.provider_unavailable",
+                        provider=provider.provider,
+                        model=provider.model,
+                        tier=request.tier.value,
+                        error=type(exc).__name__,
+                        status_code=_extract_status_code(exc),
+                    )
+                    continue
+                await self._budget.release(reservation)
+                raise
             total_attempts += attempts
             return await self._finish(
                 request, provider, response, parsed, reservation, total_attempts - 1, span, start

@@ -10,7 +10,7 @@ from langgraph.types import interrupt
 
 from api.graph.schemas import CriticVerdict, GeneratedAnswer, PlannerDecision, QueryIntent
 from api.graph.state import AgentState
-from llm import CompletionRequest, Gateway, Message, Tier
+from llm import Gateway, Message, Tier, complete_json
 
 
 def _planner_system_prompt(max_retries: int) -> str:
@@ -50,23 +50,26 @@ def make_planner_node(
     call, not a generation pass. See api.graph.schemas.PlannerDecision for the
     response contract. An out-of-scope classification sets abstained=True directly
     here — api.graph.build routes straight to hitl_gate on that, skipping retrieval
-    and generation entirely."""
+    and generation entirely.
+
+    Uses llm.complete_json rather than CompletionRequest.response_model — neither
+    Groq's small models (forced tool-calling workaround, invoked unreliably) nor
+    DeepSeek's current API ("This response_format type is unavailable now" — it
+    only supports loose json_object mode, not schema-validated structured output,
+    despite litellm.supports_response_schema reporting True) can reliably serve a
+    response_format request right now. complete_json gets the same PlannerDecision
+    via plain-text completion + robust parsing instead — see
+    packages/llm/src/llm/prompted_json.py."""
 
     async def planner_node(state: AgentState) -> dict[str, Any]:
-        request = CompletionRequest(
-            tier=tier,
-            messages=_build_planner_messages(state["query"], state["max_retries"]),
-            response_model=PlannerDecision,
-            max_tokens=300,
-        )
-        result = await gateway.complete(request)
-        if not isinstance(result.parsed, PlannerDecision):
-            raise TypeError(
-                "expected a PlannerDecision from gateway.complete() with "
-                "response_model set — this indicates a Gateway contract violation"
-            )
+        messages = _build_planner_messages(state["query"], state["max_retries"])
+        # 400, not a tighter number: the fast tier's fallback chain includes a
+        # Groq gpt-oss model, which spends part of its token budget on an
+        # internal reasoning pass before emitting visible content — verified
+        # empirically that a too-tight max_tokens can return empty content on
+        # that model specifically. See packages/llm/src/llm/registry.py's docstring.
+        parsed = await complete_json(gateway, tier, messages, PlannerDecision, max_tokens=400)
 
-        parsed = result.parsed
         retry_budget = max(0, min(parsed.retry_budget, state["max_retries"]))
 
         update: dict[str, Any] = {
@@ -183,7 +186,12 @@ def make_generator_node(
     """Binds an llm.Gateway into a graph node — same build-time DI shape as
     make_retriever_node/make_reranker_node. Calls the reason tier for structured,
     citation-grounded generation; see api.graph.schemas.GeneratedAnswer for the
-    response contract this enforces."""
+    response contract this enforces.
+
+    Uses llm.complete_json rather than CompletionRequest.response_model — same
+    reasoning as make_planner_node: neither Groq's small models nor DeepSeek's
+    current API reliably serve a response_format request. complete_json gets the
+    same GeneratedAnswer via plain-text completion + robust parsing instead."""
 
     async def generator_node(state: AgentState) -> dict[str, Any]:
         chunks = state["reranked_chunks"]
@@ -199,19 +207,19 @@ def make_generator_node(
             }
 
         query_text = state["rewritten_query"] or state["query"]
-        request = CompletionRequest(
-            tier=tier,
-            messages=_build_messages(query_text, chunks),
-            response_model=GeneratedAnswer,
-        )
-        result = await gateway.complete(request)
-        if not isinstance(result.parsed, GeneratedAnswer):
-            raise TypeError(
-                "expected a GeneratedAnswer from gateway.complete() with "
-                "response_model set — this indicates a Gateway contract violation"
-            )
+        messages = _build_messages(query_text, chunks)
+        # 4096, not the complete_json default (1024): the reason tier's primary
+        # model, deepseek/deepseek-reasoner, spends real completion tokens on an
+        # internal reasoning pass before emitting visible content — verified
+        # empirically (a 300-token budget spent 118 tokens on reasoning alone,
+        # finish_reason="length") — on top of which a thorough, fully-cited answer
+        # over a complex multi-clause article can itself run long. Too tight a
+        # budget truncates mid-JSON, which complete_json's repair retry can't
+        # recover from (there's nothing wrong with the JSON to *fix*, it's just
+        # incomplete).
+        result = await complete_json(gateway, tier, messages, GeneratedAnswer, max_tokens=4096)
 
-        parsed = _validate_citations(result.parsed, {sc.chunk.id for sc in chunks})
+        parsed = _validate_citations(result, {sc.chunk.id for sc in chunks})
         return {
             "answer": parsed.answer,
             "citations": parsed.citations,
@@ -260,7 +268,17 @@ def make_critic_node(
     tier, only the cited chunks shown to the judge, small max_tokens), not a second
     full generation pass — checks that the cited text actually supports the answer's
     claims, not just that the citation ids are valid (make_generator_node's
-    _validate_citations already covers that part)."""
+    _validate_citations already covers that part).
+
+    Uses llm.complete_json rather than CompletionRequest.response_model — the fast
+    tier's Groq model doesn't support native structured output, and requesting it
+    via response_format forces LiteLLM into a tool-calling workaround this small
+    model invokes unreliably (Groq's tool_use_failed error). complete_json gets the
+    same CriticVerdict via plain-text completion + robust parsing instead. A
+    PromptedJsonError after its one repair retry propagates uncaught, same as this
+    node's existing AllProvidersExhausted/BudgetExceeded propagation — a critic that
+    truly can't produce a parseable verdict is a real system fault, not a silent
+    pass."""
 
     async def critic_node(state: AgentState) -> dict[str, Any]:
         if state["abstained"]:
@@ -270,26 +288,18 @@ def make_critic_node(
             return {"needs_retry": False, "critic_feedback": None}
 
         answer = state["answer"] or ""
-        request = CompletionRequest(
-            tier=tier,
-            messages=_build_critic_messages(answer, state["citations"], state["reranked_chunks"]),
-            response_model=CriticVerdict,
-            max_tokens=200,
-        )
-        result = await gateway.complete(request)
-        if not isinstance(result.parsed, CriticVerdict):
-            raise TypeError(
-                "expected a CriticVerdict from gateway.complete() with "
-                "response_model set — this indicates a Gateway contract violation"
-            )
+        messages = _build_critic_messages(answer, state["citations"], state["reranked_chunks"])
+        # 400, not a tighter number — same gpt-oss reasoning-overhead reasoning as
+        # make_planner_node's max_tokens comment above.
+        verdict = await complete_json(gateway, tier, messages, CriticVerdict, max_tokens=400)
 
-        if result.parsed.faithful:
+        if verdict.faithful:
             return {"needs_retry": False, "critic_feedback": None}
 
         return {
             "needs_retry": True,
             "retry_count": state["retry_count"] + 1,
-            "critic_feedback": result.parsed.reason,
+            "critic_feedback": verdict.reason,
         }
 
     return critic_node
