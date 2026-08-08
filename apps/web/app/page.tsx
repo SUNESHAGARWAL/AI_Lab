@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import { AgentGraph } from "@/components/graph/AgentGraph";
 import { streamQuery } from "@/lib/sse-client";
 import type { GraphEvent } from "@/lib/types/graph-events.generated";
 
@@ -45,7 +46,7 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-6">
+    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-4 p-6">
       <h1 className="font-serif text-2xl">AI Lab — streaming shell</h1>
 
       <form onSubmit={handleSubmit} className="flex gap-2">
@@ -65,14 +66,7 @@ export default function Home() {
         </button>
       </form>
 
-      <div className="border-rule flex-1 overflow-y-auto border p-2 font-mono text-xs">
-        {log.length === 0 && <p className="text-abstain">No events yet.</p>}
-        {log.map((event, i) => (
-          <pre key={i} className="border-rule whitespace-pre-wrap border-b py-2 last:border-b-0">
-            {JSON.stringify(event, null, 2)}
-          </pre>
-        ))}
-      </div>
+      <AgentGraph events={log} />
     </main>
   );
 }
