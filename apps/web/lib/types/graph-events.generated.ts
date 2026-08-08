@@ -62,6 +62,7 @@ export type ThreadId6 = string;
 export type EmittedAt6 = number;
 export type Message = string;
 export type Retryable = boolean;
+export type Reason1 = ("rate_limited" | "budget_exhausted" | "provider_exhausted" | "input_too_long") | null;
 
 export interface GraphStartedEvent {
   type: Type;
@@ -155,8 +156,14 @@ export interface GraphCompletedEvent {
 }
 /**
  * A gateway failure (AllProvidersExhausted/BudgetExceeded) propagated out of a
- * node mid-stream. SSE can't change the HTTP status after headers are sent, so this
- * is the in-band equivalent of the non-streaming path's 503.
+ * node mid-stream, or a pre-graph rejection (rate limit) emitted before any node
+ * runs. SSE can't change the HTTP status after headers are sent, so this is the
+ * in-band equivalent of the non-streaming path's 503/429.
+ *
+ * `reason` is a structured discriminator for the frontend to branch on directly
+ * instead of pattern-matching `message` text — `None` for the original
+ * AllProvidersExhausted/per-request-budget cases (unchanged since before this field
+ * existed), set for the demo-hardening cases added alongside it.
  */
 export interface GraphErrorEvent {
   type: Type6;
@@ -164,5 +171,6 @@ export interface GraphErrorEvent {
   emitted_at: EmittedAt6;
   message: Message;
   retryable: Retryable;
+  reason?: Reason1;
   [k: string]: unknown;
 }

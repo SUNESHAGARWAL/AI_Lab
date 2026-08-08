@@ -7,17 +7,21 @@ import pytest
 from api.graph.nodes import (
     make_critic_node,
     make_generator_node,
+    make_hitl_gate_node,
+    make_planner_node,
     make_reranker_node,
     make_retriever_node,
     route_after_critic,
+    route_after_planner,
 )
+from api.graph.schemas import QueryIntent
 from api.graph.state import initial_state
 from core.models import Chunk, Filters, ScoredChunk
 from core.testing import FakeReranker, FakeRetriever
 from fakeredis import FakeAsyncRedis
 from llm.config import GatewaySettings
 
-from llm import AllProvidersExhausted, Gateway
+from llm import Gateway, PromptedJsonError
 
 
 def _chunk(id: str, document_id: str, text: str) -> Chunk:
@@ -268,14 +272,18 @@ async def test_generator_node_passes_through_model_abstention_on_irrelevant_chun
 @pytest.mark.asyncio
 async def test_generator_node_raises_on_malformed_response() -> None:
     # missing required fields (answer, confidence, abstained) -> fails GeneratedAnswer
-    # validation on every attempt/provider -> Gateway exhausts the chain
-    completion_fn, _ = _make_completion_fn('{"citations": []}')
-    node = make_generator_node(_gateway(completion_fn, same_provider_retry_attempts=1))
+    # validation on every attempt -> complete_json's repair retry also fails ->
+    # PromptedJsonError (generator uses llm.complete_json, not response_model, so
+    # this is no longer a Gateway-level AllProvidersExhausted).
+    completion_fn, calls = _make_completion_fn('{"citations": []}')
+    node = make_generator_node(_gateway(completion_fn))
     state = initial_state("q")
     state["reranked_chunks"] = [_scored("1", 0.9)]
 
-    with pytest.raises(AllProvidersExhausted):
+    with pytest.raises(PromptedJsonError):
         await node(state)
+
+    assert len(calls) == 2  # initial attempt + exactly one repair retry
 
 
 # --- critic node ---------------------------------------------------------------
@@ -351,3 +359,151 @@ async def test_critic_node_output_respects_hard_cap_via_route_after_critic() -> 
         assert route_after_critic(state) == expected
 
     assert route_after_critic(state) == "proceed"
+
+
+@pytest.mark.asyncio
+async def test_critic_node_raises_on_malformed_response_after_repair_retry() -> None:
+    # Same malformed text on every call — the critic no longer requests
+    # response_model/tool-calling (see llm.complete_json), so a genuinely
+    # unparseable response surfaces as PromptedJsonError after complete_json's own
+    # repair retry, not a Gateway-level error.
+    completion_fn, calls = _make_completion_fn("not json at all")
+    node = make_critic_node(_gateway(completion_fn))
+    state = initial_state("q")
+    state["reranked_chunks"] = [_scored("1", 0.9)]
+    state["answer"] = "some claim"
+    state["citations"] = ["1"]
+    state["abstained"] = False
+
+    with pytest.raises(PromptedJsonError):
+        await node(state)
+
+    assert len(calls) == 2  # initial attempt + exactly one repair retry
+
+
+# --- planner node ----------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_planner_node_improves_on_vague_query() -> None:
+    raw_query = "why doesn't it work"
+    rewritten = "why does the deployed production service fail to start"
+    payload = json.dumps(
+        {"rewritten_query": rewritten, "intent": "factual_lookup", "retry_budget": 1}
+    )
+    completion_fn, calls = _make_completion_fn(payload)
+    node = make_planner_node(_gateway(completion_fn))
+    state = initial_state(raw_query)
+
+    result = await node(state)
+
+    assert result["rewritten_query"] == rewritten
+    assert result["rewritten_query"] != raw_query
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize(
+    "intent",
+    [QueryIntent.FACTUAL_LOOKUP, QueryIntent.ROLE_SCOPED_APPLICABILITY, QueryIntent.OUT_OF_SCOPE],
+)
+@pytest.mark.asyncio
+async def test_planner_node_classifies_intent_for_each_fixed_value(
+    intent: QueryIntent,
+) -> None:
+    payload = json.dumps(
+        {
+            "rewritten_query": "q",
+            "intent": intent.value,
+            "retry_budget": 1,
+            "abstain_reason": "off topic" if intent is QueryIntent.OUT_OF_SCOPE else None,
+        }
+    )
+    completion_fn, _ = _make_completion_fn(payload)
+    node = make_planner_node(_gateway(completion_fn))
+    state = initial_state("q")
+
+    result = await node(state)
+
+    assert result["intent"] == intent
+
+
+@pytest.mark.asyncio
+async def test_planner_node_retry_budget_varies_by_complexity() -> None:
+    simple_payload = json.dumps(
+        {"rewritten_query": "q", "intent": "factual_lookup", "retry_budget": 0}
+    )
+    complex_payload = json.dumps(
+        {"rewritten_query": "q", "intent": "role_scoped_applicability", "retry_budget": 2}
+    )
+
+    simple_fn, _ = _make_completion_fn(simple_payload)
+    simple_result = await make_planner_node(_gateway(simple_fn))(initial_state("q"))
+    assert simple_result["retry_budget"] == 0
+
+    complex_fn, _ = _make_completion_fn(complex_payload)
+    complex_result = await make_planner_node(_gateway(complex_fn))(initial_state("q"))
+    assert complex_result["retry_budget"] == 2
+
+
+@pytest.mark.asyncio
+async def test_planner_node_clamps_retry_budget_to_hard_ceiling() -> None:
+    payload = json.dumps({"rewritten_query": "q", "intent": "factual_lookup", "retry_budget": 99})
+    completion_fn, _ = _make_completion_fn(payload)
+    node = make_planner_node(_gateway(completion_fn))
+    state = initial_state("q", max_retries=1)
+
+    result = await node(state)
+
+    assert result["retry_budget"] == 1
+
+
+@pytest.mark.asyncio
+async def test_planner_node_sets_abstained_on_out_of_scope() -> None:
+    payload = json.dumps(
+        {
+            "rewritten_query": "q",
+            "intent": "out_of_scope",
+            "retry_budget": 0,
+            "abstain_reason": "this is not something the corpus can answer",
+        }
+    )
+    completion_fn, _ = _make_completion_fn(payload)
+    node = make_planner_node(_gateway(completion_fn))
+    state = initial_state("q")
+
+    result = await node(state)
+
+    assert result["abstained"] is True
+    assert result["intent"] == QueryIntent.OUT_OF_SCOPE
+    assert result["abstain_reason"] == "this is not something the corpus can answer"
+    assert result["answer"] == ""
+
+
+def test_route_after_planner_continues_when_not_abstained() -> None:
+    state = initial_state("q")
+    state["abstained"] = False
+    assert route_after_planner(state) == "continue"
+
+
+def test_route_after_planner_abstains_when_out_of_scope() -> None:
+    state = initial_state("q")
+    state["abstained"] = True
+    assert route_after_planner(state) == "abstain"
+
+
+# --- hitl_gate node ----------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_hitl_gate_node_skips_interrupt_on_high_confidence() -> None:
+    node = make_hitl_gate_node()
+    state = initial_state("q")
+    state["abstained"] = False
+    state["confidence"] = 0.95
+
+    # interrupt() would raise outside a real LangGraph execution context, so this
+    # completing without error (and with exactly this return value) proves it was
+    # never reached.
+    result = await node(state)
+
+    assert result == {"human_approved": True}

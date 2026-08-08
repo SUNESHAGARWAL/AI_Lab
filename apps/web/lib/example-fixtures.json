@@ -1,0 +1,1945 @@
+{
+  "What are the requirements for high-risk AI systems under the EU AI Act?": [
+    {
+      "type": "graph_started",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.298093,
+      "query": "What are the requirements for high-risk AI systems under the EU AI Act?"
+    },
+    {
+      "type": "node_started",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.338665,
+      "node": "planner",
+      "run_id": "c279deb2-dfa9-3608-de94-09d35aff2a0e"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.353102,
+      "node": "planner",
+      "run_id": "c279deb2-dfa9-3608-de94-09d35aff2a0e",
+      "latency_ms": 14.410972595214844,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-chat",
+          "prompt_tokens": 588,
+          "completion_tokens": 49,
+          "total_tokens": 637,
+          "estimated_cost_usd": 0.00018522000000000002,
+          "latency_ms": 4.71241599007044
+        }
+      ],
+      "payload": {
+        "rewritten_query": "What are the requirements for high-risk AI systems under the EU AI Act?",
+        "intent": "factual_lookup",
+        "retry_budget": 1
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.353656,
+      "node": "retriever",
+      "run_id": "3d2104c6-9b97-4f69-5371-6e391b9d80bf"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.664265,
+      "node": "retriever",
+      "run_id": "3d2104c6-9b97-4f69-5371-6e391b9d80bf",
+      "latency_ms": 310.6069564819336,
+      "llm_calls": [],
+      "payload": {
+        "candidates": [
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:77",
+              "document_id": "eu_ai_act",
+              "text": "Recital 77\n\nWithout prejudice to the requirements related to robustness and accuracy set out in this Regulation, high-risk AI systems which fall within the scope of a regulation of the European Parliament and of the Council on horizontal cybersecurity requirements for products with digital elements, in accordance with that regulation may demonstrate compliance with the cybersecurity requirements of this Regulation by fulfilling the essential cybersecurity requirements set out in that regulation. When high-risk AI systems fulfil the essential requirements of a regulation of the European Parliament and of the Council on horizontal cybersecurity requirements for products with digital elements, they should be deemed compliant with the cybersecurity requirements set out in this Regulation in so far as the achievement of those requirements is demonstrated in the EU declaration of conformity or parts thereof issued under that regulation. To that end, the assessment of the cybersecurity risks, associated to a product with digital elements classified as high-risk AI system according to this Regulation, carried out under a regulation of the European Parliament and of the Council on horizontal cybersecurity requirements for products with digital elements, should consider risks to the cyber resilience of an AI system as regards attempts by unauthorised third parties to alter its use, behaviour or performance, including AI specific vulnerabilities such as data poisoning or adversarial attacks, as well as, as relevant, risks to fundamental rights as required by this Regulation.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "77"
+              }
+            },
+            "score": 0.8325208177411346
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:66",
+              "document_id": "eu_ai_act",
+              "text": "Recital 66\n\nRequirements should apply to high-risk AI systems as regards risk management, the quality and relevance of data sets used, technical documentation and record-keeping, transparency and the provision of information to deployers, human oversight, and robustness, accuracy and cybersecurity. Those requirements are necessary to effectively mitigate the risks for health, safety and fundamental rights. As no other less trade restrictive measures are reasonably available those requirements are not unjustified restrictions to trade.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "66"
+              }
+            },
+            "score": 0.8276502592772106
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:51",
+              "document_id": "eu_ai_act",
+              "text": "Recital 51\n\nThe classification of an AI system as high-risk pursuant to this Regulation should not necessarily mean that the product whose safety component is the AI system, or the AI system itself as a product, is considered to be high-risk under the criteria established in the relevant Union harmonisation legislation that applies to the product. This is, in particular, the case for Regulations (EU) 2017/745 and (EU) 2017/746, where a third-party conformity assessment is provided for medium-risk and high-risk products.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "51"
+              }
+            },
+            "score": 0.8253568619064258
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:6",
+              "document_id": "eu_ai_act",
+              "text": "Article 6 — Classification rules for high-risk AI systems\n\n1. Irrespective of whether an AI system is placed on the market or put into service independently of the products referred to in points (a) and (b), that AI system shall be considered to be high-risk where both of the following conditions are fulfilled: (a) the AI system is intended to be used as a safety component of a product, or the AI system is itself a product, covered by the Union harmonisation legislation listed in Annex I; (b) the product whose safety component pursuant to point (a) is the AI system, or the AI system itself as a product, is required to undergo a third-party conformity assessment, with a view to the placing on the market or the putting into service of that product pursuant to the Union harmonisation legislation listed in Annex I.\n2. In addition to the high-risk AI systems referred to in paragraph 1, AI systems referred to in Annex III shall be considered to be high-risk.\n3. By derogation from paragraph 2, an AI system referred to in Annex III shall not be considered to be high-risk where it does not pose a significant risk of harm to the health, safety or fundamental rights of natural persons, including by not materially influencing the outcome of decision making. The first subparagraph shall apply where any of the following conditions is fulfilled: Notwithstanding the first subparagraph, an AI system referred to in Annex III shall always be considered to be high-risk where the AI system performs profiling of natural persons. (a) the AI system is intended to perform a narrow procedural task; (b) the AI system is intended to improve the result of a previously completed human activity; (c) the AI system is intended to detect decision-making patterns or deviations from prior decision-making patterns and is not meant to replace or influence the previously completed human assessment, without proper human review; or (d) the AI system is intended to perform a preparatory task to an assessment relevant for the purposes of the use cases listed in Annex III.\n4. A provider who considers that an AI system referred to in Annex III is not high-risk shall document its assessment before that system is placed on the market or put into service. Such provider shall be subject to the registration obligation set out in Article 49(2). Upon request of national competent authorities, the provider shall provide the documentation of the assessment.\n5. The Commission shall, after consulting the European Artificial Intelligence Board (the ‘Board’), and no later than 2 February 2026, provide guidelines specifying the practical implementation of this Article in line with Article 96 together with a comprehensive list of practical examples of use cases of AI systems that are high-risk and not high-risk.\n6. The Commission is empowered to adopt delegated acts in accordance with Article 97 in order to amend paragraph 3, second subparagraph, of this Article by adding new conditions to those laid down therein, or by modifying them, where there is concrete and reliable evidence of the existence of AI systems that fall under the scope of Annex III, but do not pose a significant risk of harm to the health, safety or fundamental rights of natural persons.\n7. The Commission shall adopt delegated acts in accordance with Article 97 in order to amend paragraph 3, second subparagraph, of this Article by deleting any of the conditions laid down therein, where there is concrete and reliable evidence that this is necessary to maintain the level of protection of health, safety and fundamental rights provided for by this Regulation.\n8. Any amendment to the conditions laid down in paragraph 3, second subparagraph, adopted in accordance with paragraphs 6 and 7 of this Article shall not decrease the overall level of protection of health, safety and fundamental rights provided for by this Regulation and shall ensure consistency with the delegated acts adopted pursuant to Article 7(1), and take account of market and technological developments.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "6",
+                "chapter": "III",
+                "section": "1",
+                "cross_references": "article:49.2,article:96,article:97,article:7.1,annex:i,annex:iii"
+              }
+            },
+            "score": 0.8237832994719386
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:64",
+              "document_id": "eu_ai_act",
+              "text": "Recital 64\n\nTo mitigate the risks from high-risk AI systems placed on the market or put into service and to ensure a high level of trustworthiness, certain mandatory requirements should apply to high-risk AI systems, taking into account the intended purpose and the context of use of the AI system and according to the risk-management system to be established by the provider. The measures adopted by the providers to comply with the mandatory requirements of this Regulation should take into account the generally acknowledged state of the art on AI, be proportionate and effective to meet the objectives of this Regulation. Based on the New Legislative Framework, as clarified in Commission notice ‘The “Blue Guide” on the implementation of EU product rules 2022’, the general rule is that more than one legal act of Union harmonisation legislation may be applicable to one product, since the making available or putting into service can take place only when the product complies with all applicable Union harmonisation legislation. The hazards of AI systems covered by the requirements of this Regulation concern different aspects than the existing Union harmonisation legislation and therefore the requirements of this Regulation would complement the existing body of the Union harmonisation legislation. For example, machinery or medical devices products incorporating an AI system might present risks not addressed by the essential health and safety requirements set out in the relevant Union harmonised legislation, as that sectoral law does not deal with risks specific to AI systems. This calls for a simultaneous and complementary application of the various legislative acts. To ensure consistency and to avoid an unnecessary administrative burden and unnecessary costs, providers of a product that contains one or more high-risk AI system, to which the requirements of this Regulation and of the Union harmonisation legislation based on the New Legislative Framework and listed in an annex to this Regulation apply, should have flexibility with regard to operational decisions on how to ensure compliance of a product that contains one or more AI systems with all the applicable requirements of that Union harmonised legislation in an optimal manner. That flexibility could mean, for example a decision by the provider to integrate a part of the necessary testing and reporting processes, information and documentation required under this Regulation into already existing documentation and procedures required under existing Union harmonisation legislation based on the New Legislative Framework and listed in an annex to this Regulation. This should not, in any way, undermine the obligation of the provider to comply with all the applicable requirements.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "64"
+              }
+            },
+            "score": 0.8223034249363302
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:166",
+              "document_id": "eu_ai_act",
+              "text": "Recital 166\n\nIt is important that AI systems related to products that are not high-risk in accordance with this Regulation and thus are not required to comply with the requirements set out for high-risk AI systems are nevertheless safe when placed on the market or put into service. To contribute to this objective, Regulation (EU) 2023/988 of the European Parliament and of the Council ( 53 ) would apply as a safety net.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "166"
+              }
+            },
+            "score": 0.822251056961687
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:46",
+              "document_id": "eu_ai_act",
+              "text": "Recital 46\n\nHigh-risk AI systems should only be placed on the Union market, put into service or used if they comply with certain mandatory requirements. Those requirements should ensure that high-risk AI systems available in the Union or whose output is otherwise used in the Union do not pose unacceptable risks to important Union public interests as recognised and protected by Union law. On the basis of the New Legislative Framework, as clarified in the Commission notice ‘The “Blue Guide” on the implementation of EU product rules 2022’ ( 20 ) , the general rule is that more than one legal act of Union harmonisation legislation, such as Regulations (EU) 2017/745 ( 21 ) and (EU) 2017/746 ( 22 ) of the European Parliament and of the Council or Directive 2006/42/EC of the European Parliament and of the Council ( 23 ) , may be applicable to one product, since the making available or putting into service can take place only when the product complies with all applicable Union harmonisation legislation. To ensure consistency and avoid unnecessary administrative burdens or costs, providers of a product that contains one or more high-risk AI systems, to which the requirements of this Regulation and of the Union harmonisation legislation listed in an annex to this Regulation apply, should have flexibility with regard to operational decisions on how to ensure compliance of a product that contains one or more AI systems with all applicable requirements of the Union harmonisation legislation in an optimal manner. AI systems identified as high-risk should be limited to those that have a significant harmful impact on the health, safety and fundamental rights of persons in the Union and such limitation should minimise any potential restriction to international trade.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "46"
+              }
+            },
+            "score": 0.8194829929183144
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:49",
+              "document_id": "eu_ai_act",
+              "text": "Recital 49\n\nAs regards high-risk AI systems that are safety components of products or systems, or which are themselves products or systems falling within the scope of Regulation (EC) No 300/2008 of the European Parliament and of the Council ( 24 ) , Regulation (EU) No 167/2013 of the European Parliament and of the Council ( 25 ) , Regulation (EU) No 168/2013 of the European Parliament and of the Council ( 26 ) , Directive 2014/90/EU of the European Parliament and of the Council ( 27 ) , Directive (EU) 2016/797 of the European Parliament and of the Council ( 28 ) , Regulation (EU) 2018/858 of the European Parliament and of the Council ( 29 ) , Regulation (EU) 2018/1139 of the European Parliament and of the Council ( 30 ) , and Regulation (EU) 2019/2144 of the European Parliament and of the Council ( 31 ) , it is appropriate to amend those acts to ensure that the Commission takes into account, on the basis of the technical and regulatory specificities of each sector, and without interfering with existing governance, conformity assessment and enforcement mechanisms and authorities established therein, the mandatory requirements for high-risk AI systems laid down in this Regulation when adopting any relevant delegated or implementing acts on the basis of those acts.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "49"
+              }
+            },
+            "score": 0.8167157878449104
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:8",
+              "document_id": "eu_ai_act",
+              "text": "Article 8 — Compliance with the requirements\n\n1. High-risk AI systems shall comply with the requirements laid down in this Section, taking into account their intended purpose as well as the generally acknowledged state of the art on AI and AI-related technologies. The risk management system referred to in Article 9 shall be taken into account when ensuring compliance with those requirements.\n2. Where a product contains an AI system, to which the requirements of this Regulation as well as requirements of the Union harmonisation legislation listed in Section A of Annex I apply, providers shall be responsible for ensuring that their product is fully compliant with all applicable requirements under applicable Union harmonisation legislation. In ensuring the compliance of high-risk AI systems referred to in paragraph 1 with the requirements set out in this Section, and in order to ensure consistency, avoid duplication and minimise additional burdens, providers shall have a choice of integrating, as appropriate, the necessary testing and reporting processes, information and documentation they provide with regard to their product into documentation and procedures that already exist and are required under the Union harmonisation legislation listed in Section A of Annex I.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "8",
+                "chapter": "III",
+                "section": "2",
+                "cross_references": "article:9,annex:i"
+              }
+            },
+            "score": 0.8153618088148961
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:2:paragraph:2",
+              "document_id": "eu_ai_act",
+              "text": "Article 2(2) — Scope\n\n2. For AI systems classified as high-risk AI systems in accordance with Article 6(1) related to products covered by the Union harmonisation legislation listed in Section B of Annex I, only Article 6(1), Articles 102 to 109 and Article 112 apply. Article 57 applies only in so far as the requirements for high-risk AI systems under this Regulation have been integrated in that Union harmonisation legislation.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "2",
+                "chapter": "I",
+                "paragraph": "2",
+                "parent_chunk_id": "eu_ai_act:article:2",
+                "cross_references": "article:6.1,article:112,article:57,annex:i"
+              }
+            },
+            "score": 0.8114148603183198
+          }
+        ]
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.6649542,
+      "node": "reranker",
+      "run_id": "4ad493b9-46bb-82c0-2bac-13b15ca50e5b"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.665849,
+      "node": "reranker",
+      "run_id": "4ad493b9-46bb-82c0-2bac-13b15ca50e5b",
+      "latency_ms": 0.8938312530517578,
+      "llm_calls": [],
+      "payload": {
+        "reranked": [
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:77",
+              "document_id": "eu_ai_act",
+              "text": "Recital 77\n\nWithout prejudice to the requirements related to robustness and accuracy set out in this Regulation, high-risk AI systems which fall within the scope of a regulation of the European Parliament and of the Council on horizontal cybersecurity requirements for products with digital elements, in accordance with that regulation may demonstrate compliance with the cybersecurity requirements of this Regulation by fulfilling the essential cybersecurity requirements set out in that regulation. When high-risk AI systems fulfil the essential requirements of a regulation of the European Parliament and of the Council on horizontal cybersecurity requirements for products with digital elements, they should be deemed compliant with the cybersecurity requirements set out in this Regulation in so far as the achievement of those requirements is demonstrated in the EU declaration of conformity or parts thereof issued under that regulation. To that end, the assessment of the cybersecurity risks, associated to a product with digital elements classified as high-risk AI system according to this Regulation, carried out under a regulation of the European Parliament and of the Council on horizontal cybersecurity requirements for products with digital elements, should consider risks to the cyber resilience of an AI system as regards attempts by unauthorised third parties to alter its use, behaviour or performance, including AI specific vulnerabilities such as data poisoning or adversarial attacks, as well as, as relevant, risks to fundamental rights as required by this Regulation.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "77"
+              }
+            },
+            "score": 0.8325208177411346
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:66",
+              "document_id": "eu_ai_act",
+              "text": "Recital 66\n\nRequirements should apply to high-risk AI systems as regards risk management, the quality and relevance of data sets used, technical documentation and record-keeping, transparency and the provision of information to deployers, human oversight, and robustness, accuracy and cybersecurity. Those requirements are necessary to effectively mitigate the risks for health, safety and fundamental rights. As no other less trade restrictive measures are reasonably available those requirements are not unjustified restrictions to trade.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "66"
+              }
+            },
+            "score": 0.8276502592772106
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:51",
+              "document_id": "eu_ai_act",
+              "text": "Recital 51\n\nThe classification of an AI system as high-risk pursuant to this Regulation should not necessarily mean that the product whose safety component is the AI system, or the AI system itself as a product, is considered to be high-risk under the criteria established in the relevant Union harmonisation legislation that applies to the product. This is, in particular, the case for Regulations (EU) 2017/745 and (EU) 2017/746, where a third-party conformity assessment is provided for medium-risk and high-risk products.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "51"
+              }
+            },
+            "score": 0.8253568619064258
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:6",
+              "document_id": "eu_ai_act",
+              "text": "Article 6 — Classification rules for high-risk AI systems\n\n1. Irrespective of whether an AI system is placed on the market or put into service independently of the products referred to in points (a) and (b), that AI system shall be considered to be high-risk where both of the following conditions are fulfilled: (a) the AI system is intended to be used as a safety component of a product, or the AI system is itself a product, covered by the Union harmonisation legislation listed in Annex I; (b) the product whose safety component pursuant to point (a) is the AI system, or the AI system itself as a product, is required to undergo a third-party conformity assessment, with a view to the placing on the market or the putting into service of that product pursuant to the Union harmonisation legislation listed in Annex I.\n2. In addition to the high-risk AI systems referred to in paragraph 1, AI systems referred to in Annex III shall be considered to be high-risk.\n3. By derogation from paragraph 2, an AI system referred to in Annex III shall not be considered to be high-risk where it does not pose a significant risk of harm to the health, safety or fundamental rights of natural persons, including by not materially influencing the outcome of decision making. The first subparagraph shall apply where any of the following conditions is fulfilled: Notwithstanding the first subparagraph, an AI system referred to in Annex III shall always be considered to be high-risk where the AI system performs profiling of natural persons. (a) the AI system is intended to perform a narrow procedural task; (b) the AI system is intended to improve the result of a previously completed human activity; (c) the AI system is intended to detect decision-making patterns or deviations from prior decision-making patterns and is not meant to replace or influence the previously completed human assessment, without proper human review; or (d) the AI system is intended to perform a preparatory task to an assessment relevant for the purposes of the use cases listed in Annex III.\n4. A provider who considers that an AI system referred to in Annex III is not high-risk shall document its assessment before that system is placed on the market or put into service. Such provider shall be subject to the registration obligation set out in Article 49(2). Upon request of national competent authorities, the provider shall provide the documentation of the assessment.\n5. The Commission shall, after consulting the European Artificial Intelligence Board (the ‘Board’), and no later than 2 February 2026, provide guidelines specifying the practical implementation of this Article in line with Article 96 together with a comprehensive list of practical examples of use cases of AI systems that are high-risk and not high-risk.\n6. The Commission is empowered to adopt delegated acts in accordance with Article 97 in order to amend paragraph 3, second subparagraph, of this Article by adding new conditions to those laid down therein, or by modifying them, where there is concrete and reliable evidence of the existence of AI systems that fall under the scope of Annex III, but do not pose a significant risk of harm to the health, safety or fundamental rights of natural persons.\n7. The Commission shall adopt delegated acts in accordance with Article 97 in order to amend paragraph 3, second subparagraph, of this Article by deleting any of the conditions laid down therein, where there is concrete and reliable evidence that this is necessary to maintain the level of protection of health, safety and fundamental rights provided for by this Regulation.\n8. Any amendment to the conditions laid down in paragraph 3, second subparagraph, adopted in accordance with paragraphs 6 and 7 of this Article shall not decrease the overall level of protection of health, safety and fundamental rights provided for by this Regulation and shall ensure consistency with the delegated acts adopted pursuant to Article 7(1), and take account of market and technological developments.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "6",
+                "chapter": "III",
+                "section": "1",
+                "cross_references": "article:49.2,article:96,article:97,article:7.1,annex:i,annex:iii"
+              }
+            },
+            "score": 0.8237832994719386
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:64",
+              "document_id": "eu_ai_act",
+              "text": "Recital 64\n\nTo mitigate the risks from high-risk AI systems placed on the market or put into service and to ensure a high level of trustworthiness, certain mandatory requirements should apply to high-risk AI systems, taking into account the intended purpose and the context of use of the AI system and according to the risk-management system to be established by the provider. The measures adopted by the providers to comply with the mandatory requirements of this Regulation should take into account the generally acknowledged state of the art on AI, be proportionate and effective to meet the objectives of this Regulation. Based on the New Legislative Framework, as clarified in Commission notice ‘The “Blue Guide” on the implementation of EU product rules 2022’, the general rule is that more than one legal act of Union harmonisation legislation may be applicable to one product, since the making available or putting into service can take place only when the product complies with all applicable Union harmonisation legislation. The hazards of AI systems covered by the requirements of this Regulation concern different aspects than the existing Union harmonisation legislation and therefore the requirements of this Regulation would complement the existing body of the Union harmonisation legislation. For example, machinery or medical devices products incorporating an AI system might present risks not addressed by the essential health and safety requirements set out in the relevant Union harmonised legislation, as that sectoral law does not deal with risks specific to AI systems. This calls for a simultaneous and complementary application of the various legislative acts. To ensure consistency and to avoid an unnecessary administrative burden and unnecessary costs, providers of a product that contains one or more high-risk AI system, to which the requirements of this Regulation and of the Union harmonisation legislation based on the New Legislative Framework and listed in an annex to this Regulation apply, should have flexibility with regard to operational decisions on how to ensure compliance of a product that contains one or more AI systems with all the applicable requirements of that Union harmonised legislation in an optimal manner. That flexibility could mean, for example a decision by the provider to integrate a part of the necessary testing and reporting processes, information and documentation required under this Regulation into already existing documentation and procedures required under existing Union harmonisation legislation based on the New Legislative Framework and listed in an annex to this Regulation. This should not, in any way, undermine the obligation of the provider to comply with all the applicable requirements.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "64"
+              }
+            },
+            "score": 0.8223034249363302
+          }
+        ]
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.66593,
+      "node": "generator",
+      "run_id": "a75c0e52-63b7-e0ae-6780-1d81fe47e121"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.6687691,
+      "node": "generator",
+      "run_id": "a75c0e52-63b7-e0ae-6780-1d81fe47e121",
+      "latency_ms": 2.830982208251953,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-reasoner",
+          "prompt_tokens": 2298,
+          "completion_tokens": 535,
+          "total_tokens": 2833,
+          "estimated_cost_usd": 0.00086814,
+          "latency_ms": 1.3928749976912513
+        }
+      ],
+      "payload": {
+        "answer": "Under the EU AI Act, high-risk AI systems are subject to mandatory requirements covering: risk management; quality and relevance of the data sets used; technical documentation and record-keeping; transparency and the provision of information to deployers; human oversight; and robustness, accuracy and cybersecurity (eu_ai_act:recital:66). These requirements are intended to mitigate risks to health, safety and fundamental rights, and must be implemented taking into account the intended purpose, context of use, the provider's risk-management system, and the generally acknowledged state of the art, in a proportionate and effective manner (eu_ai_act:recital:64). For cybersecurity specifically, a high-risk AI system that falls within the scope of the EU horizontal cybersecurity regulation for products with digital elements may demonstrate compliance with the AI Act's cybersecurity requirements by fulfilling the essential cybersecurity requirements of that horizontal regulation, provided those requirements are demonstrated in the EU declaration of conformity issued under that regulation (eu_ai_act:recital:77).",
+        "citations": [
+          "eu_ai_act:recital:66",
+          "eu_ai_act:recital:64",
+          "eu_ai_act:recital:77"
+        ],
+        "confidence": 0.92,
+        "abstained": false,
+        "abstain_reason": null
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.6688309,
+      "node": "critic",
+      "run_id": "80db8d2b-9951-197e-6f32-1f81645cafa1"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.670632,
+      "node": "critic",
+      "run_id": "80db8d2b-9951-197e-6f32-1f81645cafa1",
+      "latency_ms": 1.7952919006347656,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-chat",
+          "prompt_tokens": 1364,
+          "completion_tokens": 11,
+          "total_tokens": 1375,
+          "estimated_cost_usd": 0.00038654,
+          "latency_ms": 0.8072919881669804
+        }
+      ],
+      "payload": {
+        "faithful": true,
+        "reason": null
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.6706638,
+      "node": "hitl_gate",
+      "run_id": "5cc4f25a-f6c8-143e-026f-ea92897d5815"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.6782389,
+      "node": "hitl_gate",
+      "run_id": "5cc4f25a-f6c8-143e-026f-ea92897d5815",
+      "latency_ms": 7.573127746582031,
+      "llm_calls": [],
+      "payload": {
+        "human_approved": true
+      }
+    },
+    {
+      "type": "graph_completed",
+      "thread_id": "cab51370-9a7d-4aed-affa-d803474bd916",
+      "emitted_at": 1786155758.680148,
+      "answer": "Under the EU AI Act, high-risk AI systems are subject to mandatory requirements covering: risk management; quality and relevance of the data sets used; technical documentation and record-keeping; transparency and the provision of information to deployers; human oversight; and robustness, accuracy and cybersecurity (eu_ai_act:recital:66). These requirements are intended to mitigate risks to health, safety and fundamental rights, and must be implemented taking into account the intended purpose, context of use, the provider's risk-management system, and the generally acknowledged state of the art, in a proportionate and effective manner (eu_ai_act:recital:64). For cybersecurity specifically, a high-risk AI system that falls within the scope of the EU horizontal cybersecurity regulation for products with digital elements may demonstrate compliance with the AI Act's cybersecurity requirements by fulfilling the essential cybersecurity requirements of that horizontal regulation, provided those requirements are demonstrated in the EU declaration of conformity issued under that regulation (eu_ai_act:recital:77).",
+      "citations": [
+        "eu_ai_act:recital:66",
+        "eu_ai_act:recital:64",
+        "eu_ai_act:recital:77"
+      ],
+      "confidence": 0.92,
+      "abstained": false,
+      "human_approved": true
+    }
+  ],
+  "What is a data protection impact assessment under GDPR?": [
+    {
+      "type": "graph_started",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.68449,
+      "query": "What is a data protection impact assessment under GDPR?"
+    },
+    {
+      "type": "node_started",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.685834,
+      "node": "planner",
+      "run_id": "d1b8cc57-aa35-b0a7-4f0f-2ba73a2a6704"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.6876569,
+      "node": "planner",
+      "run_id": "d1b8cc57-aa35-b0a7-4f0f-2ba73a2a6704",
+      "latency_ms": 1.8160343170166016,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-chat",
+          "prompt_tokens": 583,
+          "completion_tokens": 56,
+          "total_tokens": 639,
+          "estimated_cost_usd": 0.00018676,
+          "latency_ms": 0.7442500063916668
+        }
+      ],
+      "payload": {
+        "rewritten_query": "What is a data protection impact assessment (DPIA) under the General Data Protection Regulation (GDPR)?",
+        "intent": "factual_lookup",
+        "retry_budget": 1
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.687693,
+      "node": "retriever",
+      "run_id": "7465e339-57af-9034-1c9c-b43adb31f427"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.707885,
+      "node": "retriever",
+      "run_id": "7465e339-57af-9034-1c9c-b43adb31f427",
+      "latency_ms": 20.190000534057617,
+      "llm_calls": [],
+      "payload": {
+        "candidates": [
+          {
+            "chunk": {
+              "id": "gdpr:recital:90",
+              "document_id": "gdpr",
+              "text": "Recital 90\n\nIn such cases, a data protection impact assessment should be carried out by the controller prior to the processing in order to assess the particular likelihood and severity of the high risk, taking into account the nature, scope, context and purposes of the processing and the sources of the risk. That impact assessment should include, in particular, the measures, safeguards and mechanisms envisaged for mitigating that risk, ensuring the protection of personal data and demonstrating compliance with this Regulation.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "90"
+              }
+            },
+            "score": 0.7579193855572126
+          },
+          {
+            "chunk": {
+              "id": "gdpr:recital:84",
+              "document_id": "gdpr",
+              "text": "Recital 84\n\nIn order to enhance compliance with this Regulation where processing operations are likely to result in a high risk to the rights and freedoms of natural persons, the controller should be responsible for the carrying-out of a data protection impact assessment to evaluate, in particular, the origin, nature, particularity and severity of that risk. The outcome of the assessment should be taken into account when determining the appropriate measures to be taken in order to demonstrate that the processing of personal data complies with this Regulation. Where a data-protection impact assessment indicates that processing operations involve a high risk which the controller cannot mitigate by appropriate measures in terms of available technology and costs of implementation, a consultation of the supervisory authority should take place prior to the processing.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "84"
+              }
+            },
+            "score": 0.7457857435005016
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:35:paragraph:7",
+              "document_id": "gdpr",
+              "text": "Article 35(7) — Data protection impact assessment\n\n7. The assessment shall contain at least: (a) a systematic description of the envisaged processing operations and the purposes of the processing, including, where applicable, the legitimate interest pursued by the controller; (b) an assessment of the necessity and proportionality of the processing operations in relation to the purposes; (c) an assessment of the risks to the rights and freedoms of data subjects referred to in paragraph 1; and (d) the measures envisaged to address the risks, including safeguards, security measures and mechanisms to ensure the protection of personal data and to demonstrate compliance with this Regulation taking into account the rights and legitimate interests of data subjects and other persons concerned.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "35",
+                "chapter": "IV",
+                "section": "3",
+                "paragraph": "7",
+                "parent_chunk_id": "gdpr:article:35"
+              }
+            },
+            "score": 0.7443461722914967
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:35:paragraph:3",
+              "document_id": "gdpr",
+              "text": "Article 35(3) — Data protection impact assessment\n\n3. A data protection impact assessment referred to in paragraph 1 shall in particular be required in the case of: (a) a systematic and extensive evaluation of personal aspects relating to natural persons which is based on automated processing, including profiling, and on which decisions are based that produce legal effects concerning the natural person or similarly significantly affect the natural person; (b) processing on a large scale of special categories of data referred to in Article 9(1), or of personal data relating to criminal convictions and offences referred to in Article 10; or (c) a systematic monitoring of a publicly accessible area on a large scale.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "35",
+                "chapter": "IV",
+                "section": "3",
+                "paragraph": "3",
+                "parent_chunk_id": "gdpr:article:35",
+                "cross_references": "article:9.1,article:10"
+              }
+            },
+            "score": 0.7429762635841226
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:35",
+              "document_id": "gdpr",
+              "text": "Article 35 — Data protection impact assessment\n\n1. Where a type of processing in particular using new technologies, and taking into account the nature, scope, context and purposes of the processing, is likely to result in a high risk to the rights and freedoms of natural persons, the controller shall, prior to the processing, carry out an assessment of the impact of the envisaged processing operations on the protection of personal data. A single assessment may address a set of similar processing operations that present similar high risks.\n2. The controller shall seek the advice of the data protection officer, where designated, when carrying out a data protection impact assessment.\n3. A data protection impact assessment referred to in paragraph 1 shall in particular be required in the case of: (a) a systematic and extensive evaluation of personal aspects relating to natural persons which is based on automated processing, including profiling, and on which decisions are based that produce legal effects concerning the natural person or similarly significantly affect the natural person; (b) processing on a large scale of special categories of data referred to in Article 9(1), or of personal data relating to criminal convictions and offences referred to in Article 10; or (c) a systematic monitoring of a publicly accessible area on a large scale.\n4. The supervisory authority shall establish and make public a list of the kind of processing operations which are subject to the requirement for a data protection impact assessment pursuant to paragraph 1. The supervisory authority shall communicate those lists to the Board referred to in Article 68.\n5. The supervisory authority may also establish and make public a list of the kind of processing operations for which no data protection impact assessment is required. The supervisory authority shall communicate those lists to the Board.\n6. Prior to the adoption of the lists referred to in paragraphs 4 and 5, the competent supervisory authority shall apply the consistency mechanism referred to in Article 63 where such lists involve processing activities which are related to the offering of goods or services to data subjects or to the monitoring of their behaviour in several Member States, or may substantially affect the free movement of personal data within the Union.\n7. The assessment shall contain at least: (a) a systematic description of the envisaged processing operations and the purposes of the processing, including, where applicable, the legitimate interest pursued by the controller; (b) an assessment of the necessity and proportionality of the processing operations in relation to the purposes; (c) an assessment of the risks to the rights and freedoms of data subjects referred to in paragraph 1; and (d) the measures envisaged to address the risks, including safeguards, security measures and mechanisms to ensure the protection of personal data and to demonstrate compliance with this Regulation taking into account the rights and legitimate interests of data subjects and other persons concerned.\n8. Compliance with approved codes of conduct referred to in Article 40 by the relevant controllers or processors shall be taken into due account in assessing the impact of the processing operations performed by such controllers or processors, in particular for the purposes of a data protection impact assessment.\n9. Where appropriate, the controller shall seek the views of data subjects or their representatives on the intended processing, without prejudice to the protection of commercial or public interests or the security of processing operations.\n10. Where processing pursuant to point (c) or (e) of Article 6(1) has a legal basis in Union law or in the law of the Member State to which the controller is subject, that law regulates the specific processing operation or set of operations in question, and a data protection impact assessment has already been carried out as part of a general impact assessment in the context of the adoption of that legal basis, paragraphs 1 to 7 shall not apply unless Member States deem it to be necessary to carry out such an assessment prior to processing activities.\n11. Where necessary, the controller shall carry out a review to assess if processing is performed in accordance with the data protection impact assessment at least when there is a change of the risk represented by processing operations.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "35",
+                "chapter": "IV",
+                "section": "3",
+                "cross_references": "article:9.1,article:10,article:68,article:63,article:40,article:6.1"
+              }
+            },
+            "score": 0.7313462873892131
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:35:paragraph:11",
+              "document_id": "gdpr",
+              "text": "Article 35(11) — Data protection impact assessment\n\n11. Where necessary, the controller shall carry out a review to assess if processing is performed in accordance with the data protection impact assessment at least when there is a change of the risk represented by processing operations.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "35",
+                "chapter": "IV",
+                "section": "3",
+                "paragraph": "11",
+                "parent_chunk_id": "gdpr:article:35"
+              }
+            },
+            "score": 0.7207723426358509
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:35:paragraph:2",
+              "document_id": "gdpr",
+              "text": "Article 35(2) — Data protection impact assessment\n\n2. The controller shall seek the advice of the data protection officer, where designated, when carrying out a data protection impact assessment.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "35",
+                "chapter": "IV",
+                "section": "3",
+                "paragraph": "2",
+                "parent_chunk_id": "gdpr:article:35"
+              }
+            },
+            "score": 0.7188479043426628
+          },
+          {
+            "chunk": {
+              "id": "gdpr:recital:91",
+              "document_id": "gdpr",
+              "text": "Recital 91\n\nThis should in particular apply to large-scale processing operations which aim to process a considerable amount of personal data at regional, national or supranational level and which could affect a large number of data subjects and which are likely to result in a high risk, for example, on account of their sensitivity, where in accordance with the achieved state of technological knowledge a new technology is used on a large scale as well as to other processing operations which result in a high risk to the rights and freedoms of data subjects, in particular where those operations render it more difficult for data subjects to exercise their rights. A data protection impact assessment should also be made where personal data are processed for taking decisions regarding specific natural persons following any systematic and extensive evaluation of personal aspects relating to natural persons based on profiling those data or following the processing of special categories of personal data, biometric data, or data on criminal convictions and offences or related security measures. A data protection impact assessment is equally required for monitoring publicly accessible areas on a large scale, especially when using optic-electronic devices or for any other operations where the competent supervisory authority considers that the processing is likely to result in a high risk to the rights and freedoms of data subjects, in particular because they prevent data subjects from exercising a right or using a service or a contract, or because they are carried out systematically on a large scale. The processing of personal data should not be considered to be on a large scale if the processing concerns personal data from patients or clients by an individual physician, other health care professional or lawyer. In such cases, a data protection impact assessment should not be mandatory.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "91"
+              }
+            },
+            "score": 0.7157102396660913
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:35:paragraph:1",
+              "document_id": "gdpr",
+              "text": "Article 35(1) — Data protection impact assessment\n\n1. Where a type of processing in particular using new technologies, and taking into account the nature, scope, context and purposes of the processing, is likely to result in a high risk to the rights and freedoms of natural persons, the controller shall, prior to the processing, carry out an assessment of the impact of the envisaged processing operations on the protection of personal data. A single assessment may address a set of similar processing operations that present similar high risks.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "35",
+                "chapter": "IV",
+                "section": "3",
+                "paragraph": "1",
+                "parent_chunk_id": "gdpr:article:35"
+              }
+            },
+            "score": 0.7095898736012133
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:35:paragraph:8",
+              "document_id": "gdpr",
+              "text": "Article 35(8) — Data protection impact assessment\n\n8. Compliance with approved codes of conduct referred to in Article 40 by the relevant controllers or processors shall be taken into due account in assessing the impact of the processing operations performed by such controllers or processors, in particular for the purposes of a data protection impact assessment.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "35",
+                "chapter": "IV",
+                "section": "3",
+                "paragraph": "8",
+                "parent_chunk_id": "gdpr:article:35",
+                "cross_references": "article:40"
+              }
+            },
+            "score": 0.7036010799645747
+          }
+        ]
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.708003,
+      "node": "reranker",
+      "run_id": "2c9c222c-bb27-5546-c165-ceb3d89c4105"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.708582,
+      "node": "reranker",
+      "run_id": "2c9c222c-bb27-5546-c165-ceb3d89c4105",
+      "latency_ms": 0.5781650543212891,
+      "llm_calls": [],
+      "payload": {
+        "reranked": [
+          {
+            "chunk": {
+              "id": "gdpr:recital:90",
+              "document_id": "gdpr",
+              "text": "Recital 90\n\nIn such cases, a data protection impact assessment should be carried out by the controller prior to the processing in order to assess the particular likelihood and severity of the high risk, taking into account the nature, scope, context and purposes of the processing and the sources of the risk. That impact assessment should include, in particular, the measures, safeguards and mechanisms envisaged for mitigating that risk, ensuring the protection of personal data and demonstrating compliance with this Regulation.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "90"
+              }
+            },
+            "score": 0.7579193855572126
+          },
+          {
+            "chunk": {
+              "id": "gdpr:recital:84",
+              "document_id": "gdpr",
+              "text": "Recital 84\n\nIn order to enhance compliance with this Regulation where processing operations are likely to result in a high risk to the rights and freedoms of natural persons, the controller should be responsible for the carrying-out of a data protection impact assessment to evaluate, in particular, the origin, nature, particularity and severity of that risk. The outcome of the assessment should be taken into account when determining the appropriate measures to be taken in order to demonstrate that the processing of personal data complies with this Regulation. Where a data-protection impact assessment indicates that processing operations involve a high risk which the controller cannot mitigate by appropriate measures in terms of available technology and costs of implementation, a consultation of the supervisory authority should take place prior to the processing.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "84"
+              }
+            },
+            "score": 0.7457857435005016
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:35:paragraph:7",
+              "document_id": "gdpr",
+              "text": "Article 35(7) — Data protection impact assessment\n\n7. The assessment shall contain at least: (a) a systematic description of the envisaged processing operations and the purposes of the processing, including, where applicable, the legitimate interest pursued by the controller; (b) an assessment of the necessity and proportionality of the processing operations in relation to the purposes; (c) an assessment of the risks to the rights and freedoms of data subjects referred to in paragraph 1; and (d) the measures envisaged to address the risks, including safeguards, security measures and mechanisms to ensure the protection of personal data and to demonstrate compliance with this Regulation taking into account the rights and legitimate interests of data subjects and other persons concerned.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "35",
+                "chapter": "IV",
+                "section": "3",
+                "paragraph": "7",
+                "parent_chunk_id": "gdpr:article:35"
+              }
+            },
+            "score": 0.7443461722914967
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:35:paragraph:3",
+              "document_id": "gdpr",
+              "text": "Article 35(3) — Data protection impact assessment\n\n3. A data protection impact assessment referred to in paragraph 1 shall in particular be required in the case of: (a) a systematic and extensive evaluation of personal aspects relating to natural persons which is based on automated processing, including profiling, and on which decisions are based that produce legal effects concerning the natural person or similarly significantly affect the natural person; (b) processing on a large scale of special categories of data referred to in Article 9(1), or of personal data relating to criminal convictions and offences referred to in Article 10; or (c) a systematic monitoring of a publicly accessible area on a large scale.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "35",
+                "chapter": "IV",
+                "section": "3",
+                "paragraph": "3",
+                "parent_chunk_id": "gdpr:article:35",
+                "cross_references": "article:9.1,article:10"
+              }
+            },
+            "score": 0.7429762635841226
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:35",
+              "document_id": "gdpr",
+              "text": "Article 35 — Data protection impact assessment\n\n1. Where a type of processing in particular using new technologies, and taking into account the nature, scope, context and purposes of the processing, is likely to result in a high risk to the rights and freedoms of natural persons, the controller shall, prior to the processing, carry out an assessment of the impact of the envisaged processing operations on the protection of personal data. A single assessment may address a set of similar processing operations that present similar high risks.\n2. The controller shall seek the advice of the data protection officer, where designated, when carrying out a data protection impact assessment.\n3. A data protection impact assessment referred to in paragraph 1 shall in particular be required in the case of: (a) a systematic and extensive evaluation of personal aspects relating to natural persons which is based on automated processing, including profiling, and on which decisions are based that produce legal effects concerning the natural person or similarly significantly affect the natural person; (b) processing on a large scale of special categories of data referred to in Article 9(1), or of personal data relating to criminal convictions and offences referred to in Article 10; or (c) a systematic monitoring of a publicly accessible area on a large scale.\n4. The supervisory authority shall establish and make public a list of the kind of processing operations which are subject to the requirement for a data protection impact assessment pursuant to paragraph 1. The supervisory authority shall communicate those lists to the Board referred to in Article 68.\n5. The supervisory authority may also establish and make public a list of the kind of processing operations for which no data protection impact assessment is required. The supervisory authority shall communicate those lists to the Board.\n6. Prior to the adoption of the lists referred to in paragraphs 4 and 5, the competent supervisory authority shall apply the consistency mechanism referred to in Article 63 where such lists involve processing activities which are related to the offering of goods or services to data subjects or to the monitoring of their behaviour in several Member States, or may substantially affect the free movement of personal data within the Union.\n7. The assessment shall contain at least: (a) a systematic description of the envisaged processing operations and the purposes of the processing, including, where applicable, the legitimate interest pursued by the controller; (b) an assessment of the necessity and proportionality of the processing operations in relation to the purposes; (c) an assessment of the risks to the rights and freedoms of data subjects referred to in paragraph 1; and (d) the measures envisaged to address the risks, including safeguards, security measures and mechanisms to ensure the protection of personal data and to demonstrate compliance with this Regulation taking into account the rights and legitimate interests of data subjects and other persons concerned.\n8. Compliance with approved codes of conduct referred to in Article 40 by the relevant controllers or processors shall be taken into due account in assessing the impact of the processing operations performed by such controllers or processors, in particular for the purposes of a data protection impact assessment.\n9. Where appropriate, the controller shall seek the views of data subjects or their representatives on the intended processing, without prejudice to the protection of commercial or public interests or the security of processing operations.\n10. Where processing pursuant to point (c) or (e) of Article 6(1) has a legal basis in Union law or in the law of the Member State to which the controller is subject, that law regulates the specific processing operation or set of operations in question, and a data protection impact assessment has already been carried out as part of a general impact assessment in the context of the adoption of that legal basis, paragraphs 1 to 7 shall not apply unless Member States deem it to be necessary to carry out such an assessment prior to processing activities.\n11. Where necessary, the controller shall carry out a review to assess if processing is performed in accordance with the data protection impact assessment at least when there is a change of the risk represented by processing operations.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "35",
+                "chapter": "IV",
+                "section": "3",
+                "cross_references": "article:9.1,article:10,article:68,article:63,article:40,article:6.1"
+              }
+            },
+            "score": 0.7313462873892131
+          }
+        ]
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.708626,
+      "node": "generator",
+      "run_id": "666e2d04-7a65-e6a2-8ef4-da1aeb053484"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.710051,
+      "node": "generator",
+      "run_id": "666e2d04-7a65-e6a2-8ef4-da1aeb053484",
+      "latency_ms": 1.4188289642333984,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-reasoner",
+          "prompt_tokens": 1909,
+          "completion_tokens": 525,
+          "total_tokens": 2434,
+          "estimated_cost_usd": 0.00075502,
+          "latency_ms": 0.6445409962907434
+        }
+      ],
+      "payload": {
+        "answer": "A data protection impact assessment (DPIA) under the GDPR is an assessment that the controller must carry out prior to processing where a type of processing, in particular using new technologies and taking into account the nature, scope, context and purposes of the processing, is likely to result in a high risk to the rights and freedoms of natural persons. Its purpose is to evaluate the origin, nature, particularity and severity of that risk and the likelihood and severity of the high risk, including measures, safeguards and mechanisms envisaged to mitigate it and demonstrate compliance with the GDPR. The DPIA must contain at least: a systematic description of the envisaged processing operations and purposes; an assessment of necessity and proportionality; an assessment of risks to data subjects' rights and freedoms; and measures envisaged to address the risks, including safeguards and security measures. A DPIA is specifically required for: systematic and extensive automated evaluation of personal aspects, including profiling, on which decisions with legal or similarly significant effects are based; large-scale processing of special categories of data or criminal conviction/offence data; and large-scale systematic monitoring of publicly accessible areas. The controller must also seek the advice of the data protection officer when carrying out a DPIA, and where the assessment indicates an unmitigated high risk, consultation of the supervisory authority is required before processing.",
+        "citations": [
+          "gdpr:recital:84",
+          "gdpr:recital:90",
+          "gdpr:article:35",
+          "gdpr:article:35:paragraph:3",
+          "gdpr:article:35:paragraph:7"
+        ],
+        "confidence": 1.0,
+        "abstained": false,
+        "abstain_reason": null
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.7100759,
+      "node": "critic",
+      "run_id": "9719df97-d127-f3ba-8091-5d8a5f4b98f0"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.711523,
+      "node": "critic",
+      "run_id": "9719df97-d127-f3ba-8091-5d8a5f4b98f0",
+      "latency_ms": 1.4431476593017578,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-chat",
+          "prompt_tokens": 1953,
+          "completion_tokens": 11,
+          "total_tokens": 1964,
+          "estimated_cost_usd": 0.00055146,
+          "latency_ms": 0.6172920111566782
+        }
+      ],
+      "payload": {
+        "faithful": true,
+        "reason": null
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.711545,
+      "node": "hitl_gate",
+      "run_id": "c3c8c0af-8f23-efe2-a428-aa07a22ae8d8"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.718736,
+      "node": "hitl_gate",
+      "run_id": "c3c8c0af-8f23-efe2-a428-aa07a22ae8d8",
+      "latency_ms": 7.189035415649414,
+      "llm_calls": [],
+      "payload": {
+        "human_approved": true
+      }
+    },
+    {
+      "type": "graph_completed",
+      "thread_id": "e6f476b6-cb32-4436-af9f-a5bf0fab58a3",
+      "emitted_at": 1786155758.720198,
+      "answer": "A data protection impact assessment (DPIA) under the GDPR is an assessment that the controller must carry out prior to processing where a type of processing, in particular using new technologies and taking into account the nature, scope, context and purposes of the processing, is likely to result in a high risk to the rights and freedoms of natural persons. Its purpose is to evaluate the origin, nature, particularity and severity of that risk and the likelihood and severity of the high risk, including measures, safeguards and mechanisms envisaged to mitigate it and demonstrate compliance with the GDPR. The DPIA must contain at least: a systematic description of the envisaged processing operations and purposes; an assessment of necessity and proportionality; an assessment of risks to data subjects' rights and freedoms; and measures envisaged to address the risks, including safeguards and security measures. A DPIA is specifically required for: systematic and extensive automated evaluation of personal aspects, including profiling, on which decisions with legal or similarly significant effects are based; large-scale processing of special categories of data or criminal conviction/offence data; and large-scale systematic monitoring of publicly accessible areas. The controller must also seek the advice of the data protection officer when carrying out a DPIA, and where the assessment indicates an unmitigated high risk, consultation of the supervisory authority is required before processing.",
+      "citations": [
+        "gdpr:recital:84",
+        "gdpr:recital:90",
+        "gdpr:article:35",
+        "gdpr:article:35:paragraph:3",
+        "gdpr:article:35:paragraph:7"
+      ],
+      "confidence": 1.0,
+      "abstained": false,
+      "human_approved": true
+    }
+  ],
+  "How does the GDPR define personal data?": [
+    {
+      "type": "graph_started",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.724444,
+      "query": "How does the GDPR define personal data?"
+    },
+    {
+      "type": "node_started",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.72613,
+      "node": "planner",
+      "run_id": "5ab7aef1-039d-51b1-8e60-5e8be2810089"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.7279491,
+      "node": "planner",
+      "run_id": "5ab7aef1-039d-51b1-8e60-5e8be2810089",
+      "latency_ms": 1.811981201171875,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-chat",
+          "prompt_tokens": 581,
+          "completion_tokens": 42,
+          "total_tokens": 623,
+          "estimated_cost_usd": 0.00018032,
+          "latency_ms": 0.688833009917289
+        }
+      ],
+      "payload": {
+        "rewritten_query": "How does the GDPR define personal data?",
+        "intent": "factual_lookup",
+        "retry_budget": 1
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.7279842,
+      "node": "retriever",
+      "run_id": "360eeb7a-d820-823f-8736-94f7244b2a6d"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.7474802,
+      "node": "retriever",
+      "run_id": "360eeb7a-d820-823f-8736-94f7244b2a6d",
+      "latency_ms": 19.493818283081055,
+      "llm_calls": [],
+      "payload": {
+        "candidates": [
+          {
+            "chunk": {
+              "id": "gdpr:article:4",
+              "document_id": "gdpr",
+              "text": "Article 4 — Definitions\n\nFor the purposes of this Regulation: (1) ‘personal data’ means any information relating to an identified or identifiable natural person (‘data subject’); an identifiable natural person is one who can be identified, directly or indirectly, in particular by reference to an identifier such as a name, an identification number, location data, an online identifier or to one or more factors specific to the physical, physiological, genetic, mental, economic, cultural or social identity of that natural person; (2) ‘processing’ means any operation or set of operations which is performed on personal data or on sets of personal data, whether or not by automated means, such as collection, recording, organisation, structuring, storage, adaptation or alteration, retrieval, consultation, use, disclosure by transmission, dissemination or otherwise making available, alignment or combination, restriction, erasure or destruction; (3) ‘restriction of processing’ means the marking of stored personal data with the aim of limiting their processing in the future; (4) ‘profiling’ means any form of automated processing of personal data consisting of the use of personal data to evaluate certain personal aspects relating to a natural person, in particular to analyse or predict aspects concerning that natural person's performance at work, economic situation, health, personal preferences, interests, reliability, behaviour, location or movements; (5) ‘pseudonymisation’ means the processing of personal data in such a manner that the personal data can no longer be attributed to a specific data subject without the use of additional information, provided that such additional information is kept separately and is subject to technical and organisational measures to ensure that the personal data are not attributed to an identified or identifiable natural person; (6) ‘filing system’ means any structured set of personal data which are accessible according to specific criteria, whether centralised, decentralised or dispersed on a functional or geographical basis; (7) ‘controller’ means the natural or legal person, public authority, agency or other body which, alone or jointly with others, determines the purposes and means of the processing of personal data; where the purposes and means of such processing are determined by Union or Member State law, the controller or the specific criteria for its nomination may be provided for by Union or Member State law; (8) ‘processor’ means a natural or legal person, public authority, agency or other body which processes personal data on behalf of the controller; (9) ‘recipient’ means a natural or legal person, public authority, agency or another body, to which the personal data are disclosed, whether a third party or not. However, public authorities which may receive personal data in the framework of a particular inquiry in accordance with Union or Member State law shall not be regarded as recipients; the processing of those data by those public authorities shall be in compliance with the applicable data protection rules according to the purposes of the processing; (10) ‘third party’ means a natural or legal person, public authority, agency or body other than the data subject, controller, processor and persons who, under the direct authority of the controller or processor, are authorised to process personal data; (11) ‘consent’ of the data subject means any freely given, specific, informed and unambiguous indication of the data subject's wishes by which he or she, by a statement or by a clear affirmative action, signifies agreement to the processing of personal data relating to him or her; (12) ‘personal data breach’ means a breach of security leading to the accidental or unlawful destruction, loss, alteration, unauthorised disclosure of, or access to, personal data transmitted, stored or otherwise processed; (13) ‘genetic data’ means personal data relating to the inherited or acquired genetic characteristics of a natural person which give unique information about the physiology or the health of that natural person and which result, in particular, from an analysis of a biological sample from the natural person in question; (14) ‘biometric data’ means personal data resulting from specific technical processing relating to the physical, physiological or behavioural characteristics of a natural person, which allow or confirm the unique identification of that natural person, such as facial images or dactyloscopic data; (15) ‘data concerning health’ means personal data related to the physical or mental health of a natural person, including the provision of health care services, which reveal information about his or her health status; (16) ‘main establishment’ means: (a) as regards a controller with establishments in more than one Member State, the place of its central administration in the Union, unless the decisions on the purposes and means of the processing of personal data are taken in another establishment of the controller in the Union and the latter establishment has the power to have such decisions implemented, in which case the establishment having taken such decisions is to be considered to be the main establishment; (b) as regards a processor with establishments in more than one Member State, the place of its central administration in the Union, or, if the processor has no central administration in the Union, the establishment of the processor in the Union where the main processing activities in the context of the activities of an establishment of the processor take place to the extent that the processor is subject to specific obligations under this Regulation; (17) ‘representative’ means a natural or legal person established in the Union who, designated by the controller or processor in writing pursuant to Article 27, represents the controller or processor with regard to their respective obligations under this Regulation; (18) ‘enterprise’ means a natural or legal person engaged in an economic activity, irrespective of its legal form, including partnerships or associations regularly engaged in an economic activity; (19) ‘group of undertakings’ means a controlling undertaking and its controlled undertakings; (20) ‘binding corporate rules’ means personal data protection policies which are adhered to by a controller or processor established on the territory of a Member State for transfers or a set of transfers of personal data to a controller or processor in one or more third countries within a group of undertakings, or group of enterprises engaged in a joint economic activity; (21) ‘supervisory authority’ means an independent public authority which is established by a Member State pursuant to Article 51; (22) ‘supervisory authority concerned’ means a supervisory authority which is concerned by the processing of personal data because: (a) the controller or processor is established on the territory of the Member State of that supervisory authority; (b) data subjects residing in the Member State of that supervisory authority are substantially affected or likely to be substantially affected by the processing; or (c) a complaint has been lodged with that supervisory authority; (23) ‘cross-border processing’ means either: (a) processing of personal data which takes place in the context of the activities of establishments in more than one Member State of a controller or processor in the Union where the controller or processor is established in more than one Member State; or (b) processing of personal data which takes place in the context of the activities of a single establishment of a controller or processor in the Union but which substantially affects or is likely to substantially affect data subjects in more than one Member State. (24) ‘relevant and reasoned objection’ means an objection to a draft decision as to whether there is an infringement of this Regulation, or whether envisaged action in relation to the controller or processor complies with this Regulation, which clearly demonstrates the significance of the risks posed by the draft decision as regards the fundamental rights and freedoms of data subjects and, where applicable, the free flow of personal data within the Union; (25) ‘information society service’ means a service as defined in point (b) of Article 1(1) of Directive (EU) 2015/1535 of the European Parliament and of the Council ( 19 ) ; (26) ‘international organisation’ means an organisation and its subordinate bodies governed by public international law, or any other body which is set up by, or on the basis of, an agreement between two or more countries.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "4",
+                "chapter": "I",
+                "cross_references": "article:27,article:51,article:1.1"
+              }
+            },
+            "score": 0.8205317961852686
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:5",
+              "document_id": "gdpr",
+              "text": "Article 5 — Principles relating to processing of personal data\n\n1. Personal data shall be: (a) processed lawfully, fairly and in a transparent manner in relation to the data subject (‘lawfulness, fairness and transparency’); (b) collected for specified, explicit and legitimate purposes and not further processed in a manner that is incompatible with those purposes; further processing for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes shall, in accordance with Article 89(1), not be considered to be incompatible with the initial purposes (‘purpose limitation’); (c) adequate, relevant and limited to what is necessary in relation to the purposes for which they are processed (‘data minimisation’); (d) accurate and, where necessary, kept up to date; every reasonable step must be taken to ensure that personal data that are inaccurate, having regard to the purposes for which they are processed, are erased or rectified without delay (‘accuracy’); (e) kept in a form which permits identification of data subjects for no longer than is necessary for the purposes for which the personal data are processed; personal data may be stored for longer periods insofar as the personal data will be processed solely for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes in accordance with Article 89(1) subject to implementation of the appropriate technical and organisational measures required by this Regulation in order to safeguard the rights and freedoms of the data subject (‘storage limitation’); (f) processed in a manner that ensures appropriate security of the personal data, including protection against unauthorised or unlawful processing and against accidental loss, destruction or damage, using appropriate technical or organisational measures (‘integrity and confidentiality’).\n2. The controller shall be responsible for, and be able to demonstrate compliance with, paragraph 1 (‘accountability’).",
+              "metadata": {
+                "source": "gdpr",
+                "article": "5",
+                "chapter": "II",
+                "cross_references": "article:89.1"
+              }
+            },
+            "score": 0.7663742303848267
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:5:paragraph:1",
+              "document_id": "gdpr",
+              "text": "Article 5(1) — Principles relating to processing of personal data\n\n1. Personal data shall be: (a) processed lawfully, fairly and in a transparent manner in relation to the data subject (‘lawfulness, fairness and transparency’); (b) collected for specified, explicit and legitimate purposes and not further processed in a manner that is incompatible with those purposes; further processing for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes shall, in accordance with Article 89(1), not be considered to be incompatible with the initial purposes (‘purpose limitation’); (c) adequate, relevant and limited to what is necessary in relation to the purposes for which they are processed (‘data minimisation’); (d) accurate and, where necessary, kept up to date; every reasonable step must be taken to ensure that personal data that are inaccurate, having regard to the purposes for which they are processed, are erased or rectified without delay (‘accuracy’); (e) kept in a form which permits identification of data subjects for no longer than is necessary for the purposes for which the personal data are processed; personal data may be stored for longer periods insofar as the personal data will be processed solely for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes in accordance with Article 89(1) subject to implementation of the appropriate technical and organisational measures required by this Regulation in order to safeguard the rights and freedoms of the data subject (‘storage limitation’); (f) processed in a manner that ensures appropriate security of the personal data, including protection against unauthorised or unlawful processing and against accidental loss, destruction or damage, using appropriate technical or organisational measures (‘integrity and confidentiality’).",
+              "metadata": {
+                "source": "gdpr",
+                "article": "5",
+                "chapter": "II",
+                "paragraph": "1",
+                "parent_chunk_id": "gdpr:article:5",
+                "cross_references": "article:89.1"
+              }
+            },
+            "score": 0.7644636631011963
+          },
+          {
+            "chunk": {
+              "id": "gdpr:recital:159",
+              "document_id": "gdpr",
+              "text": "Recital 159\n\nWhere personal data are processed for scientific research purposes, this Regulation should also apply to that processing. For the purposes of this Regulation, the processing of personal data for scientific research purposes should be interpreted in a broad manner including for example technological development and demonstration, fundamental research, applied research and privately funded research. In addition, it should take into account the Union's objective under Article 179(1) TFEU of achieving a European Research Area. Scientific research purposes should also include studies conducted in the public interest in the area of public health. To meet the specificities of processing personal data for scientific research purposes, specific conditions should apply in particular as regards the publication or otherwise disclosure of personal data in the context of scientific research purposes. If the result of scientific research in particular in the health context gives reason for further measures in the interest of the data subject, the general rules of this Regulation should apply in view of those measures.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "159",
+                "cross_references": "article:179.1"
+              }
+            },
+            "score": 0.7633846543202024
+          },
+          {
+            "chunk": {
+              "id": "gdpr:recital:162",
+              "document_id": "gdpr",
+              "text": "Recital 162\n\nWhere personal data are processed for statistical purposes, this Regulation should apply to that processing. Union or Member State law should, within the limits of this Regulation, determine statistical content, control of access, specifications for the processing of personal data for statistical purposes and appropriate measures to safeguard the rights and freedoms of the data subject and for ensuring statistical confidentiality. Statistical purposes mean any operation of collection and the processing of personal data necessary for statistical surveys or for the production of statistical results. Those statistical results may further be used for different purposes, including a scientific research purpose. The statistical purpose implies that the result of processing for statistical purposes is not personal data, but aggregate data, and that this result or the personal data are not used in support of measures or decisions regarding any particular natural person.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "162"
+              }
+            },
+            "score": 0.7594804763793945
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:9:paragraph:1",
+              "document_id": "gdpr",
+              "text": "Article 9(1) — Processing of special categories of personal data\n\n1. Processing of personal data revealing racial or ethnic origin, political opinions, religious or philosophical beliefs, or trade union membership, and the processing of genetic data, biometric data for the purpose of uniquely identifying a natural person, data concerning health or data concerning a natural person's sex life or sexual orientation shall be prohibited.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "9",
+                "chapter": "II",
+                "paragraph": "1",
+                "parent_chunk_id": "gdpr:article:9"
+              }
+            },
+            "score": 0.7570235729217529
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:9:paragraph:3",
+              "document_id": "gdpr",
+              "text": "Article 9(3) — Processing of special categories of personal data\n\n3. Personal data referred to in paragraph 1 may be processed for the purposes referred to in point (h) of paragraph 2 when those data are processed by or under the responsibility of a professional subject to the obligation of professional secrecy under Union or Member State law or rules established by national competent bodies or by another person also subject to an obligation of secrecy under Union or Member State law or rules established by national competent bodies.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "9",
+                "chapter": "II",
+                "paragraph": "3",
+                "parent_chunk_id": "gdpr:article:9"
+              }
+            },
+            "score": 0.7557757126026071
+          },
+          {
+            "chunk": {
+              "id": "gdpr:recital:18",
+              "document_id": "gdpr",
+              "text": "Recital 18\n\nThis Regulation does not apply to the processing of personal data by a natural person in the course of a purely personal or household activity and thus with no connection to a professional or commercial activity. Personal or household activities could include correspondence and the holding of addresses, or social networking and online activity undertaken within the context of such activities. However, this Regulation applies to controllers or processors which provide the means for processing personal data for such personal or household activities.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "18"
+              }
+            },
+            "score": 0.7533328533172607
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:25:paragraph:2",
+              "document_id": "gdpr",
+              "text": "Article 25(2) — Data protection by design and by default\n\n2. The controller shall implement appropriate technical and organisational measures for ensuring that, by default, only personal data which are necessary for each specific purpose of the processing are processed. That obligation applies to the amount of personal data collected, the extent of their processing, the period of their storage and their accessibility. In particular, such measures shall ensure that by default personal data are not made accessible without the individual's intervention to an indefinite number of natural persons.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "25",
+                "chapter": "IV",
+                "section": "1",
+                "paragraph": "2",
+                "parent_chunk_id": "gdpr:article:25"
+              }
+            },
+            "score": 0.7508444338533633
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:1:paragraph:1",
+              "document_id": "gdpr",
+              "text": "Article 1(1) — Subject-matter and objectives\n\n1. This Regulation lays down rules relating to the protection of natural persons with regard to the processing of personal data and rules relating to the free movement of personal data.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "1",
+                "chapter": "I",
+                "paragraph": "1",
+                "parent_chunk_id": "gdpr:article:1"
+              }
+            },
+            "score": 0.7491527349261813
+          }
+        ]
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.747583,
+      "node": "reranker",
+      "run_id": "a3f5ec6d-c4a4-dbc6-8026-874dccc54286"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.7481291,
+      "node": "reranker",
+      "run_id": "a3f5ec6d-c4a4-dbc6-8026-874dccc54286",
+      "latency_ms": 0.5471706390380859,
+      "llm_calls": [],
+      "payload": {
+        "reranked": [
+          {
+            "chunk": {
+              "id": "gdpr:article:4",
+              "document_id": "gdpr",
+              "text": "Article 4 — Definitions\n\nFor the purposes of this Regulation: (1) ‘personal data’ means any information relating to an identified or identifiable natural person (‘data subject’); an identifiable natural person is one who can be identified, directly or indirectly, in particular by reference to an identifier such as a name, an identification number, location data, an online identifier or to one or more factors specific to the physical, physiological, genetic, mental, economic, cultural or social identity of that natural person; (2) ‘processing’ means any operation or set of operations which is performed on personal data or on sets of personal data, whether or not by automated means, such as collection, recording, organisation, structuring, storage, adaptation or alteration, retrieval, consultation, use, disclosure by transmission, dissemination or otherwise making available, alignment or combination, restriction, erasure or destruction; (3) ‘restriction of processing’ means the marking of stored personal data with the aim of limiting their processing in the future; (4) ‘profiling’ means any form of automated processing of personal data consisting of the use of personal data to evaluate certain personal aspects relating to a natural person, in particular to analyse or predict aspects concerning that natural person's performance at work, economic situation, health, personal preferences, interests, reliability, behaviour, location or movements; (5) ‘pseudonymisation’ means the processing of personal data in such a manner that the personal data can no longer be attributed to a specific data subject without the use of additional information, provided that such additional information is kept separately and is subject to technical and organisational measures to ensure that the personal data are not attributed to an identified or identifiable natural person; (6) ‘filing system’ means any structured set of personal data which are accessible according to specific criteria, whether centralised, decentralised or dispersed on a functional or geographical basis; (7) ‘controller’ means the natural or legal person, public authority, agency or other body which, alone or jointly with others, determines the purposes and means of the processing of personal data; where the purposes and means of such processing are determined by Union or Member State law, the controller or the specific criteria for its nomination may be provided for by Union or Member State law; (8) ‘processor’ means a natural or legal person, public authority, agency or other body which processes personal data on behalf of the controller; (9) ‘recipient’ means a natural or legal person, public authority, agency or another body, to which the personal data are disclosed, whether a third party or not. However, public authorities which may receive personal data in the framework of a particular inquiry in accordance with Union or Member State law shall not be regarded as recipients; the processing of those data by those public authorities shall be in compliance with the applicable data protection rules according to the purposes of the processing; (10) ‘third party’ means a natural or legal person, public authority, agency or body other than the data subject, controller, processor and persons who, under the direct authority of the controller or processor, are authorised to process personal data; (11) ‘consent’ of the data subject means any freely given, specific, informed and unambiguous indication of the data subject's wishes by which he or she, by a statement or by a clear affirmative action, signifies agreement to the processing of personal data relating to him or her; (12) ‘personal data breach’ means a breach of security leading to the accidental or unlawful destruction, loss, alteration, unauthorised disclosure of, or access to, personal data transmitted, stored or otherwise processed; (13) ‘genetic data’ means personal data relating to the inherited or acquired genetic characteristics of a natural person which give unique information about the physiology or the health of that natural person and which result, in particular, from an analysis of a biological sample from the natural person in question; (14) ‘biometric data’ means personal data resulting from specific technical processing relating to the physical, physiological or behavioural characteristics of a natural person, which allow or confirm the unique identification of that natural person, such as facial images or dactyloscopic data; (15) ‘data concerning health’ means personal data related to the physical or mental health of a natural person, including the provision of health care services, which reveal information about his or her health status; (16) ‘main establishment’ means: (a) as regards a controller with establishments in more than one Member State, the place of its central administration in the Union, unless the decisions on the purposes and means of the processing of personal data are taken in another establishment of the controller in the Union and the latter establishment has the power to have such decisions implemented, in which case the establishment having taken such decisions is to be considered to be the main establishment; (b) as regards a processor with establishments in more than one Member State, the place of its central administration in the Union, or, if the processor has no central administration in the Union, the establishment of the processor in the Union where the main processing activities in the context of the activities of an establishment of the processor take place to the extent that the processor is subject to specific obligations under this Regulation; (17) ‘representative’ means a natural or legal person established in the Union who, designated by the controller or processor in writing pursuant to Article 27, represents the controller or processor with regard to their respective obligations under this Regulation; (18) ‘enterprise’ means a natural or legal person engaged in an economic activity, irrespective of its legal form, including partnerships or associations regularly engaged in an economic activity; (19) ‘group of undertakings’ means a controlling undertaking and its controlled undertakings; (20) ‘binding corporate rules’ means personal data protection policies which are adhered to by a controller or processor established on the territory of a Member State for transfers or a set of transfers of personal data to a controller or processor in one or more third countries within a group of undertakings, or group of enterprises engaged in a joint economic activity; (21) ‘supervisory authority’ means an independent public authority which is established by a Member State pursuant to Article 51; (22) ‘supervisory authority concerned’ means a supervisory authority which is concerned by the processing of personal data because: (a) the controller or processor is established on the territory of the Member State of that supervisory authority; (b) data subjects residing in the Member State of that supervisory authority are substantially affected or likely to be substantially affected by the processing; or (c) a complaint has been lodged with that supervisory authority; (23) ‘cross-border processing’ means either: (a) processing of personal data which takes place in the context of the activities of establishments in more than one Member State of a controller or processor in the Union where the controller or processor is established in more than one Member State; or (b) processing of personal data which takes place in the context of the activities of a single establishment of a controller or processor in the Union but which substantially affects or is likely to substantially affect data subjects in more than one Member State. (24) ‘relevant and reasoned objection’ means an objection to a draft decision as to whether there is an infringement of this Regulation, or whether envisaged action in relation to the controller or processor complies with this Regulation, which clearly demonstrates the significance of the risks posed by the draft decision as regards the fundamental rights and freedoms of data subjects and, where applicable, the free flow of personal data within the Union; (25) ‘information society service’ means a service as defined in point (b) of Article 1(1) of Directive (EU) 2015/1535 of the European Parliament and of the Council ( 19 ) ; (26) ‘international organisation’ means an organisation and its subordinate bodies governed by public international law, or any other body which is set up by, or on the basis of, an agreement between two or more countries.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "4",
+                "chapter": "I",
+                "cross_references": "article:27,article:51,article:1.1"
+              }
+            },
+            "score": 0.8205317961852686
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:5",
+              "document_id": "gdpr",
+              "text": "Article 5 — Principles relating to processing of personal data\n\n1. Personal data shall be: (a) processed lawfully, fairly and in a transparent manner in relation to the data subject (‘lawfulness, fairness and transparency’); (b) collected for specified, explicit and legitimate purposes and not further processed in a manner that is incompatible with those purposes; further processing for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes shall, in accordance with Article 89(1), not be considered to be incompatible with the initial purposes (‘purpose limitation’); (c) adequate, relevant and limited to what is necessary in relation to the purposes for which they are processed (‘data minimisation’); (d) accurate and, where necessary, kept up to date; every reasonable step must be taken to ensure that personal data that are inaccurate, having regard to the purposes for which they are processed, are erased or rectified without delay (‘accuracy’); (e) kept in a form which permits identification of data subjects for no longer than is necessary for the purposes for which the personal data are processed; personal data may be stored for longer periods insofar as the personal data will be processed solely for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes in accordance with Article 89(1) subject to implementation of the appropriate technical and organisational measures required by this Regulation in order to safeguard the rights and freedoms of the data subject (‘storage limitation’); (f) processed in a manner that ensures appropriate security of the personal data, including protection against unauthorised or unlawful processing and against accidental loss, destruction or damage, using appropriate technical or organisational measures (‘integrity and confidentiality’).\n2. The controller shall be responsible for, and be able to demonstrate compliance with, paragraph 1 (‘accountability’).",
+              "metadata": {
+                "source": "gdpr",
+                "article": "5",
+                "chapter": "II",
+                "cross_references": "article:89.1"
+              }
+            },
+            "score": 0.7663742303848267
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:5:paragraph:1",
+              "document_id": "gdpr",
+              "text": "Article 5(1) — Principles relating to processing of personal data\n\n1. Personal data shall be: (a) processed lawfully, fairly and in a transparent manner in relation to the data subject (‘lawfulness, fairness and transparency’); (b) collected for specified, explicit and legitimate purposes and not further processed in a manner that is incompatible with those purposes; further processing for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes shall, in accordance with Article 89(1), not be considered to be incompatible with the initial purposes (‘purpose limitation’); (c) adequate, relevant and limited to what is necessary in relation to the purposes for which they are processed (‘data minimisation’); (d) accurate and, where necessary, kept up to date; every reasonable step must be taken to ensure that personal data that are inaccurate, having regard to the purposes for which they are processed, are erased or rectified without delay (‘accuracy’); (e) kept in a form which permits identification of data subjects for no longer than is necessary for the purposes for which the personal data are processed; personal data may be stored for longer periods insofar as the personal data will be processed solely for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes in accordance with Article 89(1) subject to implementation of the appropriate technical and organisational measures required by this Regulation in order to safeguard the rights and freedoms of the data subject (‘storage limitation’); (f) processed in a manner that ensures appropriate security of the personal data, including protection against unauthorised or unlawful processing and against accidental loss, destruction or damage, using appropriate technical or organisational measures (‘integrity and confidentiality’).",
+              "metadata": {
+                "source": "gdpr",
+                "article": "5",
+                "chapter": "II",
+                "paragraph": "1",
+                "parent_chunk_id": "gdpr:article:5",
+                "cross_references": "article:89.1"
+              }
+            },
+            "score": 0.7644636631011963
+          },
+          {
+            "chunk": {
+              "id": "gdpr:recital:159",
+              "document_id": "gdpr",
+              "text": "Recital 159\n\nWhere personal data are processed for scientific research purposes, this Regulation should also apply to that processing. For the purposes of this Regulation, the processing of personal data for scientific research purposes should be interpreted in a broad manner including for example technological development and demonstration, fundamental research, applied research and privately funded research. In addition, it should take into account the Union's objective under Article 179(1) TFEU of achieving a European Research Area. Scientific research purposes should also include studies conducted in the public interest in the area of public health. To meet the specificities of processing personal data for scientific research purposes, specific conditions should apply in particular as regards the publication or otherwise disclosure of personal data in the context of scientific research purposes. If the result of scientific research in particular in the health context gives reason for further measures in the interest of the data subject, the general rules of this Regulation should apply in view of those measures.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "159",
+                "cross_references": "article:179.1"
+              }
+            },
+            "score": 0.7633846543202024
+          },
+          {
+            "chunk": {
+              "id": "gdpr:recital:162",
+              "document_id": "gdpr",
+              "text": "Recital 162\n\nWhere personal data are processed for statistical purposes, this Regulation should apply to that processing. Union or Member State law should, within the limits of this Regulation, determine statistical content, control of access, specifications for the processing of personal data for statistical purposes and appropriate measures to safeguard the rights and freedoms of the data subject and for ensuring statistical confidentiality. Statistical purposes mean any operation of collection and the processing of personal data necessary for statistical surveys or for the production of statistical results. Those statistical results may further be used for different purposes, including a scientific research purpose. The statistical purpose implies that the result of processing for statistical purposes is not personal data, but aggregate data, and that this result or the personal data are not used in support of measures or decisions regarding any particular natural person.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "162"
+              }
+            },
+            "score": 0.7594804763793945
+          }
+        ]
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.748193,
+      "node": "generator",
+      "run_id": "2f23f3db-5f4d-1600-bae2-e75ba3618c0f"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.7499032,
+      "node": "generator",
+      "run_id": "2f23f3db-5f4d-1600-bae2-e75ba3618c0f",
+      "latency_ms": 1.7049312591552734,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-reasoner",
+          "prompt_tokens": 3261,
+          "completion_tokens": 248,
+          "total_tokens": 3509,
+          "estimated_cost_usd": 0.00101724,
+          "latency_ms": 0.9603750077076256
+        }
+      ],
+      "payload": {
+        "answer": "The GDPR defines 'personal data' as any information relating to an identified or identifiable natural person ('data subject'); an identifiable natural person is one who can be identified, directly or indirectly, in particular by reference to an identifier such as a name, an identification number, location data, an online identifier or to one or more factors specific to the physical, physiological, genetic, mental, economic, cultural or social identity of that natural person.",
+        "citations": [
+          "gdpr:article:4"
+        ],
+        "confidence": 1.0,
+        "abstained": false,
+        "abstain_reason": null
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.749936,
+      "node": "critic",
+      "run_id": "656857ad-3160-7491-ecac-783ec4efd589"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.751301,
+      "node": "critic",
+      "run_id": "656857ad-3160-7491-ecac-783ec4efd589",
+      "latency_ms": 1.3577938079833984,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-chat",
+          "prompt_tokens": 2015,
+          "completion_tokens": 11,
+          "total_tokens": 2026,
+          "estimated_cost_usd": 0.00056882,
+          "latency_ms": 0.5746250099036843
+        }
+      ],
+      "payload": {
+        "faithful": true,
+        "reason": null
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.751325,
+      "node": "hitl_gate",
+      "run_id": "4e4d1d60-eba7-0c2b-96d6-debca5fbe770"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.758486,
+      "node": "hitl_gate",
+      "run_id": "4e4d1d60-eba7-0c2b-96d6-debca5fbe770",
+      "latency_ms": 7.159948348999023,
+      "llm_calls": [],
+      "payload": {
+        "human_approved": true
+      }
+    },
+    {
+      "type": "graph_completed",
+      "thread_id": "c76e4955-b3a7-404a-b40e-749b69ee2bbf",
+      "emitted_at": 1786155758.7601879,
+      "answer": "The GDPR defines 'personal data' as any information relating to an identified or identifiable natural person ('data subject'); an identifiable natural person is one who can be identified, directly or indirectly, in particular by reference to an identifier such as a name, an identification number, location data, an online identifier or to one or more factors specific to the physical, physiological, genetic, mental, economic, cultural or social identity of that natural person.",
+      "citations": [
+        "gdpr:article:4"
+      ],
+      "confidence": 1.0,
+      "abstained": false,
+      "human_approved": true
+    }
+  ],
+  "How do the fines for AI Act deployer violations compare to GDPR fines?": [
+    {
+      "type": "graph_started",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.764621,
+      "query": "How do the fines for AI Act deployer violations compare to GDPR fines?"
+    },
+    {
+      "type": "node_started",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.766119,
+      "node": "planner",
+      "run_id": "3963fd60-ae2f-941d-4604-b3116000d371"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.767775,
+      "node": "planner",
+      "run_id": "3963fd60-ae2f-941d-4604-b3116000d371",
+      "latency_ms": 1.650094985961914,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-chat",
+          "prompt_tokens": 588,
+          "completion_tokens": 57,
+          "total_tokens": 645,
+          "estimated_cost_usd": 0.00018858000000000001,
+          "latency_ms": 0.6236659974092618
+        }
+      ],
+      "payload": {
+        "rewritten_query": "How do the fines for violations of the EU AI Act by deployers compare to the fines imposed under the GDPR?",
+        "intent": "factual_lookup",
+        "retry_budget": 1
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.767809,
+      "node": "retriever",
+      "run_id": "bc8efc6a-3f3d-d412-15ca-43e769ea1b14"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.789949,
+      "node": "retriever",
+      "run_id": "bc8efc6a-3f3d-d412-15ca-43e769ea1b14",
+      "latency_ms": 22.137165069580078,
+      "llm_calls": [],
+      "payload": {
+        "candidates": [
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:99:paragraph:3",
+              "document_id": "eu_ai_act",
+              "text": "Article 99(3) — Penalties\n\n3. Non-compliance with the prohibition of the AI practices referred to in Article 5 shall be subject to administrative fines of up to EUR 35 000 000 or, if the offender is an undertaking, up to 7 % of its total worldwide annual turnover for the preceding financial year, whichever is higher.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "99",
+                "chapter": "XII",
+                "paragraph": "3",
+                "parent_chunk_id": "eu_ai_act:article:99",
+                "cross_references": "article:5"
+              }
+            },
+            "score": 0.7478169202804565
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:101",
+              "document_id": "eu_ai_act",
+              "text": "Article 101 — Fines for providers of general-purpose AI models\n\n1. The Commission may impose on providers of general-purpose AI models fines not exceeding 3 % of their annual total worldwide turnover in the preceding financial year or EUR 15 000 000, whichever is higher., when the Commission finds that the provider intentionally or negligently: In fixing the amount of the fine or periodic penalty payment, regard shall be had to the nature, gravity and duration of the infringement, taking due account of the principles of proportionality and appropriateness. The Commission shall also into account commitments made in accordance with Article 93(3) or made in relevant codes of practice in accordance with Article 56. (a) infringed the relevant provisions of this Regulation; (b) failed to comply with a request for a document or for information pursuant to Article 91, or supplied incorrect, incomplete or misleading information; (c) failed to comply with a measure requested under Article 93; (d) failed to make available to the Commission access to the general-purpose AI model or general-purpose AI model with systemic risk with a view to conducting an evaluation pursuant to Article 92.\n2. Before adopting the decision pursuant to paragraph 1, the Commission shall communicate its preliminary findings to the provider of the general-purpose AI model and give it an opportunity to be heard.\n3. Fines imposed in accordance with this Article shall be effective, proportionate and dissuasive.\n4. Information on fines imposed under this Article shall also be communicated to the Board as appropriate.\n5. The Court of Justice of the European Union shall have unlimited jurisdiction to review decisions of the Commission fixing a fine under this Article. It may cancel, reduce or increase the fine imposed.\n6. The Commission shall adopt implementing acts containing detailed arrangements and procedural safeguards for proceedings in view of the possible adoption of decisions pursuant to paragraph 1 of this Article. Those implementing acts shall be adopted in accordance with the examination procedure referred to in Article 98(2).",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "101",
+                "chapter": "XII",
+                "cross_references": "article:93.3,article:56,article:91,article:93,article:92,article:98.2"
+              }
+            },
+            "score": 0.744369626045227
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:26:paragraph:9",
+              "document_id": "eu_ai_act",
+              "text": "Article 26(9) — Obligations of deployers of high-risk AI systems\n\n9. Where applicable, deployers of high-risk AI systems shall use the information provided under Article 13 of this Regulation to comply with their obligation to carry out a data protection impact assessment under Article 35 of Regulation (EU) 2016/679 or Article 27 of Directive (EU) 2016/680.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "26",
+                "chapter": "III",
+                "section": "3",
+                "paragraph": "9",
+                "parent_chunk_id": "eu_ai_act:article:26",
+                "cross_references": "article:13,article:35,article:27"
+              }
+            },
+            "score": 0.7408008729934186
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:100",
+              "document_id": "eu_ai_act",
+              "text": "Article 100 — Administrative fines on Union institutions, bodies, offices and agencies\n\n1. The European Data Protection Supervisor may impose administrative fines on Union institutions, bodies, offices and agencies falling within the scope of this Regulation. When deciding whether to impose an administrative fine and when deciding on the amount of the administrative fine in each individual case, all relevant circumstances of the specific situation shall be taken into account and due regard shall be given to the following: (a) the nature, gravity and duration of the infringement and of its consequences, taking into account the purpose of the AI system concerned, as well as, where appropriate, the number of affected persons and the level of damage suffered by them; (b) the degree of responsibility of the Union institution, body, office or agency, taking into account technical and organisational measures implemented by them; (c) any action taken by the Union institution, body, office or agency to mitigate the damage suffered by affected persons; (d) the degree of cooperation with the European Data Protection Supervisor in order to remedy the infringement and mitigate the possible adverse effects of the infringement, including compliance with any of the measures previously ordered by the European Data Protection Supervisor against the Union institution, body, office or agency concerned with regard to the same subject matter; (e) any similar previous infringements by the Union institution, body, office or agency; (f) the manner in which the infringement became known to the European Data Protection Supervisor, in particular whether, and if so to what extent, the Union institution, body, office or agency notified the infringement; (g) the annual budget of the Union institution, body, office or agency.\n2. Non-compliance with the prohibition of the AI practices referred to in Article 5 shall be subject to administrative fines of up to EUR 1 500 000.\n3. The non-compliance of the AI system with any requirements or obligations under this Regulation, other than those laid down in Article 5, shall be subject to administrative fines of up to EUR 750 000.\n4. Before taking decisions pursuant to this Article, the European Data Protection Supervisor shall give the Union institution, body, office or agency which is the subject of the proceedings conducted by the European Data Protection Supervisor the opportunity of being heard on the matter regarding the possible infringement. The European Data Protection Supervisor shall base his or her decisions only on elements and circumstances on which the parties concerned have been able to comment. Complainants, if any, shall be associated closely with the proceedings.\n5. The rights of defence of the parties concerned shall be fully respected in the proceedings. They shall be entitled to have access to the European Data Protection Supervisor’s file, subject to the legitimate interest of individuals or undertakings in the protection of their personal data or business secrets.\n6. Funds collected by imposition of fines in this Article shall contribute to the general budget of the Union. The fines shall not affect the effective operation of the Union institution, body, office or agency fined.\n7. The European Data Protection Supervisor shall, on an annual basis, notify the Commission of the administrative fines it has imposed pursuant to this Article and of any litigation or judicial proceedings it has initiated.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "100",
+                "chapter": "XII",
+                "cross_references": "article:5"
+              }
+            },
+            "score": 0.7271143198013306
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:101:paragraph:1",
+              "document_id": "eu_ai_act",
+              "text": "Article 101(1) — Fines for providers of general-purpose AI models\n\n1. The Commission may impose on providers of general-purpose AI models fines not exceeding 3 % of their annual total worldwide turnover in the preceding financial year or EUR 15 000 000, whichever is higher., when the Commission finds that the provider intentionally or negligently: In fixing the amount of the fine or periodic penalty payment, regard shall be had to the nature, gravity and duration of the infringement, taking due account of the principles of proportionality and appropriateness. The Commission shall also into account commitments made in accordance with Article 93(3) or made in relevant codes of practice in accordance with Article 56. (a) infringed the relevant provisions of this Regulation; (b) failed to comply with a request for a document or for information pursuant to Article 91, or supplied incorrect, incomplete or misleading information; (c) failed to comply with a measure requested under Article 93; (d) failed to make available to the Commission access to the general-purpose AI model or general-purpose AI model with systemic risk with a view to conducting an evaluation pursuant to Article 92.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "101",
+                "chapter": "XII",
+                "paragraph": "1",
+                "parent_chunk_id": "eu_ai_act:article:101",
+                "cross_references": "article:93.3,article:56,article:91,article:93,article:92"
+              }
+            },
+            "score": 0.7248374223709106
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:169",
+              "document_id": "eu_ai_act",
+              "text": "Recital 169\n\nCompliance with the obligations on providers of general-purpose AI models imposed under this Regulation should be enforceable, inter alia, by means of fines. To that end, appropriate levels of fines should also be laid down for infringement of those obligations, including the failure to comply with measures requested by the Commission in accordance with this Regulation, subject to appropriate limitation periods in accordance with the principle of proportionality. All decisions taken by the Commission under this Regulation are subject to review by the Court of Justice of the European Union in accordance with the TFEU, including the unlimited jurisdiction of the Court of Justice with regard to penalties pursuant to Article 261 TFEU.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "169",
+                "cross_references": "article:261"
+              }
+            },
+            "score": 0.7218039631843567
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:26:paragraph:10",
+              "document_id": "eu_ai_act",
+              "text": "Article 26(10) — Obligations of deployers of high-risk AI systems\n\n10. Without prejudice to Directive (EU) 2016/680, in the framework of an investigation for the targeted search of a person suspected or convicted of having committed a criminal offence, the deployer of a high-risk AI system for post-remote biometric identification shall request an authorisation, ex ante , or without undue delay and no later than 48 hours, by a judicial authority or an administrative authority whose decision is binding and subject to judicial review, for the use of that system, except when it is used for the initial identification of a potential suspect based on objective and verifiable facts directly linked to the offence. Each use shall be limited to what is strictly necessary for the investigation of a specific criminal offence. If the authorisation requested pursuant to the first subparagraph is rejected, the use of the post-remote biometric identification system linked to that requested authorisation shall be stopped with immediate effect and the personal data linked to the use of the high-risk AI system for which the authorisation was requested shall be deleted. In no case shall such high-risk AI system for post-remote biometric identification be used for law enforcement purposes in an untargeted way, without any link to a criminal offence, a criminal proceeding, a genuine and present or genuine and foreseeable threat of a criminal offence, or the search for a specific missing person. It shall be ensured that no decision that produces an adverse legal effect on a person may be taken by the law enforcement authorities based solely on the output of such post-remote biometric identification systems. This paragraph is without prejudice to Article 9 of Regulation (EU) 2016/679 and Article 10 of Directive (EU) 2016/680 for the processing of biometric data. Regardless of the purpose or deployer, each use of such high-risk AI systems shall be documented in the relevant police file and shall be made available to the relevant market surveillance authority and the national data protection authority upon request, excluding the disclosure of sensitive operational data related to law enforcement. This subparagraph shall be without prejudice to the powers conferred by Directive (EU) 2016/680 on supervisory authorities. Deployers shall submit annual reports to the relevant market surveillance and national data protection authorities on their use of post-remote biometric identification systems, excluding the disclosure of sensitive operational data related to law enforcement. The reports may be aggregated to cover more than one deployment. Member States may introduce, in accordance with Union law, more restrictive laws on the use of post-remote biometric identification systems.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "26",
+                "chapter": "III",
+                "section": "3",
+                "paragraph": "10",
+                "parent_chunk_id": "eu_ai_act:article:26",
+                "cross_references": "article:9,article:10"
+              }
+            },
+            "score": 0.7165610790252686
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:100:paragraph:3",
+              "document_id": "eu_ai_act",
+              "text": "Article 100(3) — Administrative fines on Union institutions, bodies, offices and agencies\n\n3. The non-compliance of the AI system with any requirements or obligations under this Regulation, other than those laid down in Article 5, shall be subject to administrative fines of up to EUR 750 000.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "100",
+                "chapter": "XII",
+                "paragraph": "3",
+                "parent_chunk_id": "eu_ai_act:article:100",
+                "cross_references": "article:5"
+              }
+            },
+            "score": 0.716050386428833
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:100:paragraph:2",
+              "document_id": "eu_ai_act",
+              "text": "Article 100(2) — Administrative fines on Union institutions, bodies, offices and agencies\n\n2. Non-compliance with the prohibition of the AI practices referred to in Article 5 shall be subject to administrative fines of up to EUR 1 500 000.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "100",
+                "chapter": "XII",
+                "paragraph": "2",
+                "parent_chunk_id": "eu_ai_act:article:100",
+                "cross_references": "article:5"
+              }
+            },
+            "score": 0.7159686515312595
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:91",
+              "document_id": "eu_ai_act",
+              "text": "Recital 91\n\nGiven the nature of AI systems and the risks to safety and fundamental rights possibly associated with their use, including as regards the need to ensure proper monitoring of the performance of an AI system in a real-life setting, it is appropriate to set specific responsibilities for deployers. Deployers should in particular take appropriate technical and organisational measures to ensure they use high-risk AI systems in accordance with the instructions of use and certain other obligations should be provided for with regard to monitoring of the functioning of the AI systems and with regard to record-keeping, as appropriate. Furthermore, deployers should ensure that the persons assigned to implement the instructions for use and human oversight as set out in this Regulation have the necessary competence, in particular an adequate level of AI literacy, training and authority to properly fulfil those tasks. Those obligations should be without prejudice to other deployer obligations in relation to high-risk AI systems under Union or national law.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "91"
+              }
+            },
+            "score": 0.7147062590893365
+          }
+        ]
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.7900548,
+      "node": "reranker",
+      "run_id": "c3522439-e418-7e30-1198-7f12eae764d0"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.79059,
+      "node": "reranker",
+      "run_id": "c3522439-e418-7e30-1198-7f12eae764d0",
+      "latency_ms": 0.5340576171875,
+      "llm_calls": [],
+      "payload": {
+        "reranked": [
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:99:paragraph:3",
+              "document_id": "eu_ai_act",
+              "text": "Article 99(3) — Penalties\n\n3. Non-compliance with the prohibition of the AI practices referred to in Article 5 shall be subject to administrative fines of up to EUR 35 000 000 or, if the offender is an undertaking, up to 7 % of its total worldwide annual turnover for the preceding financial year, whichever is higher.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "99",
+                "chapter": "XII",
+                "paragraph": "3",
+                "parent_chunk_id": "eu_ai_act:article:99",
+                "cross_references": "article:5"
+              }
+            },
+            "score": 0.7478169202804565
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:101",
+              "document_id": "eu_ai_act",
+              "text": "Article 101 — Fines for providers of general-purpose AI models\n\n1. The Commission may impose on providers of general-purpose AI models fines not exceeding 3 % of their annual total worldwide turnover in the preceding financial year or EUR 15 000 000, whichever is higher., when the Commission finds that the provider intentionally or negligently: In fixing the amount of the fine or periodic penalty payment, regard shall be had to the nature, gravity and duration of the infringement, taking due account of the principles of proportionality and appropriateness. The Commission shall also into account commitments made in accordance with Article 93(3) or made in relevant codes of practice in accordance with Article 56. (a) infringed the relevant provisions of this Regulation; (b) failed to comply with a request for a document or for information pursuant to Article 91, or supplied incorrect, incomplete or misleading information; (c) failed to comply with a measure requested under Article 93; (d) failed to make available to the Commission access to the general-purpose AI model or general-purpose AI model with systemic risk with a view to conducting an evaluation pursuant to Article 92.\n2. Before adopting the decision pursuant to paragraph 1, the Commission shall communicate its preliminary findings to the provider of the general-purpose AI model and give it an opportunity to be heard.\n3. Fines imposed in accordance with this Article shall be effective, proportionate and dissuasive.\n4. Information on fines imposed under this Article shall also be communicated to the Board as appropriate.\n5. The Court of Justice of the European Union shall have unlimited jurisdiction to review decisions of the Commission fixing a fine under this Article. It may cancel, reduce or increase the fine imposed.\n6. The Commission shall adopt implementing acts containing detailed arrangements and procedural safeguards for proceedings in view of the possible adoption of decisions pursuant to paragraph 1 of this Article. Those implementing acts shall be adopted in accordance with the examination procedure referred to in Article 98(2).",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "101",
+                "chapter": "XII",
+                "cross_references": "article:93.3,article:56,article:91,article:93,article:92,article:98.2"
+              }
+            },
+            "score": 0.744369626045227
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:26:paragraph:9",
+              "document_id": "eu_ai_act",
+              "text": "Article 26(9) — Obligations of deployers of high-risk AI systems\n\n9. Where applicable, deployers of high-risk AI systems shall use the information provided under Article 13 of this Regulation to comply with their obligation to carry out a data protection impact assessment under Article 35 of Regulation (EU) 2016/679 or Article 27 of Directive (EU) 2016/680.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "26",
+                "chapter": "III",
+                "section": "3",
+                "paragraph": "9",
+                "parent_chunk_id": "eu_ai_act:article:26",
+                "cross_references": "article:13,article:35,article:27"
+              }
+            },
+            "score": 0.7408008729934186
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:100",
+              "document_id": "eu_ai_act",
+              "text": "Article 100 — Administrative fines on Union institutions, bodies, offices and agencies\n\n1. The European Data Protection Supervisor may impose administrative fines on Union institutions, bodies, offices and agencies falling within the scope of this Regulation. When deciding whether to impose an administrative fine and when deciding on the amount of the administrative fine in each individual case, all relevant circumstances of the specific situation shall be taken into account and due regard shall be given to the following: (a) the nature, gravity and duration of the infringement and of its consequences, taking into account the purpose of the AI system concerned, as well as, where appropriate, the number of affected persons and the level of damage suffered by them; (b) the degree of responsibility of the Union institution, body, office or agency, taking into account technical and organisational measures implemented by them; (c) any action taken by the Union institution, body, office or agency to mitigate the damage suffered by affected persons; (d) the degree of cooperation with the European Data Protection Supervisor in order to remedy the infringement and mitigate the possible adverse effects of the infringement, including compliance with any of the measures previously ordered by the European Data Protection Supervisor against the Union institution, body, office or agency concerned with regard to the same subject matter; (e) any similar previous infringements by the Union institution, body, office or agency; (f) the manner in which the infringement became known to the European Data Protection Supervisor, in particular whether, and if so to what extent, the Union institution, body, office or agency notified the infringement; (g) the annual budget of the Union institution, body, office or agency.\n2. Non-compliance with the prohibition of the AI practices referred to in Article 5 shall be subject to administrative fines of up to EUR 1 500 000.\n3. The non-compliance of the AI system with any requirements or obligations under this Regulation, other than those laid down in Article 5, shall be subject to administrative fines of up to EUR 750 000.\n4. Before taking decisions pursuant to this Article, the European Data Protection Supervisor shall give the Union institution, body, office or agency which is the subject of the proceedings conducted by the European Data Protection Supervisor the opportunity of being heard on the matter regarding the possible infringement. The European Data Protection Supervisor shall base his or her decisions only on elements and circumstances on which the parties concerned have been able to comment. Complainants, if any, shall be associated closely with the proceedings.\n5. The rights of defence of the parties concerned shall be fully respected in the proceedings. They shall be entitled to have access to the European Data Protection Supervisor’s file, subject to the legitimate interest of individuals or undertakings in the protection of their personal data or business secrets.\n6. Funds collected by imposition of fines in this Article shall contribute to the general budget of the Union. The fines shall not affect the effective operation of the Union institution, body, office or agency fined.\n7. The European Data Protection Supervisor shall, on an annual basis, notify the Commission of the administrative fines it has imposed pursuant to this Article and of any litigation or judicial proceedings it has initiated.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "100",
+                "chapter": "XII",
+                "cross_references": "article:5"
+              }
+            },
+            "score": 0.7271143198013306
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:101:paragraph:1",
+              "document_id": "eu_ai_act",
+              "text": "Article 101(1) — Fines for providers of general-purpose AI models\n\n1. The Commission may impose on providers of general-purpose AI models fines not exceeding 3 % of their annual total worldwide turnover in the preceding financial year or EUR 15 000 000, whichever is higher., when the Commission finds that the provider intentionally or negligently: In fixing the amount of the fine or periodic penalty payment, regard shall be had to the nature, gravity and duration of the infringement, taking due account of the principles of proportionality and appropriateness. The Commission shall also into account commitments made in accordance with Article 93(3) or made in relevant codes of practice in accordance with Article 56. (a) infringed the relevant provisions of this Regulation; (b) failed to comply with a request for a document or for information pursuant to Article 91, or supplied incorrect, incomplete or misleading information; (c) failed to comply with a measure requested under Article 93; (d) failed to make available to the Commission access to the general-purpose AI model or general-purpose AI model with systemic risk with a view to conducting an evaluation pursuant to Article 92.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "101",
+                "chapter": "XII",
+                "paragraph": "1",
+                "parent_chunk_id": "eu_ai_act:article:101",
+                "cross_references": "article:93.3,article:56,article:91,article:93,article:92"
+              }
+            },
+            "score": 0.7248374223709106
+          }
+        ]
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.790635,
+      "node": "generator",
+      "run_id": "8d3f7a8f-698b-8eb4-9844-5147438c295b"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.792046,
+      "node": "generator",
+      "run_id": "8d3f7a8f-698b-8eb4-9844-5147438c295b",
+      "latency_ms": 1.40380859375,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-reasoner",
+          "prompt_tokens": 2036,
+          "completion_tokens": 1373,
+          "total_tokens": 3409,
+          "estimated_cost_usd": 0.00114674,
+          "latency_ms": 0.6337500090012327
+        }
+      ],
+      "payload": {
+        "answer": "The provided chunks do not contain any GDPR fine amounts or GPT penalty provisions, and they also do not specify fines that apply to deployers under the EU AI Act in a way comparable to the GDPR. Therefore, a comparison is not possible from the given material.",
+        "citations": [],
+        "confidence": 0.0,
+        "abstained": true,
+        "abstain_reason": "The chunks mention the GDPR only in relation to a data protection impact assessment (Article 26(9)), and the fine provisions included are for prohibited practices generally, providers of general-purpose AI models, and EU institutions (Articles 99(3), 100, and 101). No GDPR fines or deployer-specific fine details are provided, so the comparison cannot be made without outside knowledge."
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.7920709,
+      "node": "critic",
+      "run_id": "08125ace-534e-1204-1f8b-9019b1c20d83"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.792924,
+      "node": "critic",
+      "run_id": "08125ace-534e-1204-1f8b-9019b1c20d83",
+      "latency_ms": 0.8511543273925781,
+      "llm_calls": [],
+      "payload": {
+        "faithful": true,
+        "reason": null
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.792945,
+      "node": "hitl_gate",
+      "run_id": "a8eebc47-4608-23b1-fb1d-ba8e25c6dd92"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.800288,
+      "node": "hitl_gate",
+      "run_id": "a8eebc47-4608-23b1-fb1d-ba8e25c6dd92",
+      "latency_ms": 7.342100143432617,
+      "llm_calls": [],
+      "payload": {
+        "human_approved": null
+      }
+    },
+    {
+      "type": "graph_interrupted",
+      "thread_id": "d828aa5b-25a3-47ad-948f-9354ca0cb02a",
+      "emitted_at": 1786155758.8003259,
+      "interrupt": {
+        "type": "review",
+        "answer": "The provided chunks do not contain any GDPR fine amounts or GPT penalty provisions, and they also do not specify fines that apply to deployers under the EU AI Act in a way comparable to the GDPR. Therefore, a comparison is not possible from the given material.",
+        "citations": [],
+        "confidence": 0.0,
+        "abstained": true,
+        "abstain_reason": "The chunks mention the GDPR only in relation to a data protection impact assessment (Article 26(9)), and the fine provisions included are for prohibited practices generally, providers of general-purpose AI models, and EU institutions (Articles 99(3), 100, and 101). No GDPR fines or deployer-specific fine details are provided, so the comparison cannot be made without outside knowledge."
+      }
+    }
+  ],
+  "If my AI system is also a GDPR data processor, does the AI Act override my GDPR breach notification deadline?": [
+    {
+      "type": "graph_started",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.804937,
+      "query": "If my AI system is also a GDPR data processor, does the AI Act override my GDPR breach notification deadline?"
+    },
+    {
+      "type": "node_started",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.806036,
+      "node": "planner",
+      "run_id": "94335a2e-8889-19ee-0416-64fc8cb0a12c"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.807847,
+      "node": "planner",
+      "run_id": "94335a2e-8889-19ee-0416-64fc8cb0a12c",
+      "latency_ms": 1.8041133880615234,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-chat",
+          "prompt_tokens": 595,
+          "completion_tokens": 69,
+          "total_tokens": 664,
+          "estimated_cost_usd": 0.00019558000000000002,
+          "latency_ms": 0.7135419873520732
+        }
+      ],
+      "payload": {
+        "rewritten_query": "If my AI system is also a GDPR data processor, does the EU AI Act override or change the GDPR's 72-hour breach notification deadline for personal data breaches?",
+        "intent": "role_scoped_applicability",
+        "retry_budget": 2
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.807877,
+      "node": "retriever",
+      "run_id": "d25d296c-2415-23c3-c4d6-1eccfda3ae1e"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.829961,
+      "node": "retriever",
+      "run_id": "d25d296c-2415-23c3-c4d6-1eccfda3ae1e",
+      "latency_ms": 22.081851959228516,
+      "llm_calls": [],
+      "payload": {
+        "candidates": [
+          {
+            "chunk": {
+              "id": "gdpr:article:33:paragraph:1",
+              "document_id": "gdpr",
+              "text": "Article 33(1) — Notification of a personal data breach to the supervisory authority\n\n1. In the case of a personal data breach, the controller shall without undue delay and, where feasible, not later than 72 hours after having become aware of it, notify the personal data breach to the supervisory authority competent in accordance with Article 55, unless the personal data breach is unlikely to result in a risk to the rights and freedoms of natural persons. Where the notification to the supervisory authority is not made within 72 hours, it shall be accompanied by reasons for the delay.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "33",
+                "chapter": "IV",
+                "section": "2",
+                "paragraph": "1",
+                "parent_chunk_id": "gdpr:article:33",
+                "cross_references": "article:55"
+              }
+            },
+            "score": 0.7277034845705647
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:33:paragraph:2",
+              "document_id": "gdpr",
+              "text": "Article 33(2) — Notification of a personal data breach to the supervisory authority\n\n2. The processor shall notify the controller without undue delay after becoming aware of a personal data breach.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "33",
+                "chapter": "IV",
+                "section": "2",
+                "paragraph": "2",
+                "parent_chunk_id": "gdpr:article:33"
+              }
+            },
+            "score": 0.7207502889185985
+          },
+          {
+            "chunk": {
+              "id": "gdpr:recital:85",
+              "document_id": "gdpr",
+              "text": "Recital 85\n\nA personal data breach may, if not addressed in an appropriate and timely manner, result in physical, material or non-material damage to natural persons such as loss of control over their personal data or limitation of their rights, discrimination, identity theft or fraud, financial loss, unauthorised reversal of pseudonymisation, damage to reputation, loss of confidentiality of personal data protected by professional secrecy or any other significant economic or social disadvantage to the natural person concerned. Therefore, as soon as the controller becomes aware that a personal data breach has occurred, the controller should notify the personal data breach to the supervisory authority without undue delay and, where feasible, not later than 72 hours after having become aware of it, unless the controller is able to demonstrate, in accordance with the accountability principle, that the personal data breach is unlikely to result in a risk to the rights and freedoms of natural persons. Where such notification cannot be achieved within 72 hours, the reasons for the delay should accompany the notification and information may be provided in phases without undue further delay.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "85"
+              }
+            },
+            "score": 0.719164984275999
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:33",
+              "document_id": "gdpr",
+              "text": "Article 33 — Notification of a personal data breach to the supervisory authority\n\n1. In the case of a personal data breach, the controller shall without undue delay and, where feasible, not later than 72 hours after having become aware of it, notify the personal data breach to the supervisory authority competent in accordance with Article 55, unless the personal data breach is unlikely to result in a risk to the rights and freedoms of natural persons. Where the notification to the supervisory authority is not made within 72 hours, it shall be accompanied by reasons for the delay.\n2. The processor shall notify the controller without undue delay after becoming aware of a personal data breach.\n3. The notification referred to in paragraph 1 shall at least: (a) describe the nature of the personal data breach including where possible, the categories and approximate number of data subjects concerned and the categories and approximate number of personal data records concerned; (b) communicate the name and contact details of the data protection officer or other contact point where more information can be obtained; (c) describe the likely consequences of the personal data breach; (d) describe the measures taken or proposed to be taken by the controller to address the personal data breach, including, where appropriate, measures to mitigate its possible adverse effects.\n4. Where, and in so far as, it is not possible to provide the information at the same time, the information may be provided in phases without undue further delay.\n5. The controller shall document any personal data breaches, comprising the facts relating to the personal data breach, its effects and the remedial action taken. That documentation shall enable the supervisory authority to verify compliance with this Article.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "33",
+                "chapter": "IV",
+                "section": "2",
+                "cross_references": "article:55"
+              }
+            },
+            "score": 0.7175355721988945
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:50:paragraph:3",
+              "document_id": "eu_ai_act",
+              "text": "Article 50(3) — Transparency obligations for providers and deployers of certain AI systems\n\n3. Deployers of an emotion recognition system or a biometric categorisation system shall inform the natural persons exposed thereto of the operation of the system, and shall process the personal data in accordance with Regulations (EU) 2016/679 and (EU) 2018/1725 and Directive (EU) 2016/680, as applicable. This obligation shall not apply to AI systems used for biometric categorisation and emotion recognition, which are permitted by law to detect, prevent or investigate criminal offences, subject to appropriate safeguards for the rights and freedoms of third parties, and in accordance with Union law.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "50",
+                "chapter": "IV",
+                "paragraph": "3",
+                "parent_chunk_id": "eu_ai_act:article:50"
+              }
+            },
+            "score": 0.7091440731797187
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:79:paragraph:8",
+              "document_id": "eu_ai_act",
+              "text": "Article 79(8) — Procedure at national level for dealing with AI systems presenting a risk\n\n8. Where, within three months of receipt of the notification referred to in paragraph 5 of this Article, no objection has been raised by either a market surveillance authority of a Member State or by the Commission in respect of a provisional measure taken by a market surveillance authority of another Member State, that measure shall be deemed justified. This shall be without prejudice to the procedural rights of the concerned operator in accordance with Article 18 of Regulation (EU) 2019/1020. The three-month period referred to in this paragraph shall be reduced to 30 days in the event of non-compliance with the prohibition of the AI practices referred to in Article 5 of this Regulation.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "79",
+                "chapter": "IX",
+                "section": "3",
+                "paragraph": "8",
+                "parent_chunk_id": "eu_ai_act:article:79",
+                "cross_references": "article:18,article:5"
+              }
+            },
+            "score": 0.7076688161291104
+          },
+          {
+            "chunk": {
+              "id": "gdpr:recital:87",
+              "document_id": "gdpr",
+              "text": "Recital 87\n\nIt should be ascertained whether all appropriate technological protection and organisational measures have been implemented to establish immediately whether a personal data breach has taken place and to inform promptly the supervisory authority and the data subject. The fact that the notification was made without undue delay should be established taking into account in particular the nature and gravity of the personal data breach and its consequences and adverse effects for the data subject. Such notification may result in an intervention of the supervisory authority in accordance with its tasks and powers laid down in this Regulation.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "87"
+              }
+            },
+            "score": 0.7064891211403463
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:10",
+              "document_id": "eu_ai_act",
+              "text": "Recital 10\n\nThe fundamental right to the protection of personal data is safeguarded in particular by Regulations (EU) 2016/679 ( 11 ) and (EU) 2018/1725 ( 12 ) of the European Parliament and of the Council and Directive (EU) 2016/680 of the European Parliament and of the Council ( 13 ) . Directive 2002/58/EC of the European Parliament and of the Council ( 14 ) additionally protects private life and the confidentiality of communications, including by way of providing conditions for any storing of personal and non-personal data in, and access from, terminal equipment. Those Union legal acts provide the basis for sustainable and responsible data processing, including where data sets include a mix of personal and non-personal data. This Regulation does not seek to affect the application of existing Union law governing the processing of personal data, including the tasks and powers of the independent supervisory authorities competent to monitor compliance with those instruments. It also does not affect the obligations of providers and deployers of AI systems in their role as data controllers or processors stemming from Union or national law on the protection of personal data in so far as the design, the development or the use of AI systems involves the processing of personal data. It is also appropriate to clarify that data subjects continue to enjoy all the rights and guarantees awarded to them by such Union law, including the rights related to solely automated individual decision-making, including profiling. Harmonised rules for the placing on the market, the putting into service and the use of AI systems established under this Regulation should facilitate the effective implementation and enable the exercise of the data subjects’ rights and other remedies guaranteed under Union law on the protection of personal data and of other fundamental rights.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "10"
+              }
+            },
+            "score": 0.7037029442964242
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:10:paragraph:5",
+              "document_id": "eu_ai_act",
+              "text": "Article 10(5) — Data and data governance\n\n5. To the extent that it is strictly necessary for the purpose of ensuring bias detection and correction in relation to the high-risk AI systems in accordance with paragraph (2), points (f) and (g) of this Article, the providers of such systems may exceptionally process special categories of personal data, subject to appropriate safeguards for the fundamental rights and freedoms of natural persons. In addition to the provisions set out in Regulations (EU) 2016/679 and (EU) 2018/1725 and Directive (EU) 2016/680, all the following conditions must be met in order for such processing to occur: (a) the bias detection and correction cannot be effectively fulfilled by processing other data, including synthetic or anonymised data; (b) the special categories of personal data are subject to technical limitations on the re-use of the personal data, and state-of-the-art security and privacy-preserving measures, including pseudonymisation; (c) the special categories of personal data are subject to measures to ensure that the personal data processed are secured, protected, subject to suitable safeguards, including strict controls and documentation of the access, to avoid misuse and ensure that only authorised persons have access to those personal data with appropriate confidentiality obligations; (d) the special categories of personal data are not to be transmitted, transferred or otherwise accessed by other parties; (e) the special categories of personal data are deleted once the bias has been corrected or the personal data has reached the end of its retention period, whichever comes first; (f) the records of processing activities pursuant to Regulations (EU) 2016/679 and (EU) 2018/1725 and Directive (EU) 2016/680 include the reasons why the processing of special categories of personal data was strictly necessary to detect and correct biases, and why that objective could not be achieved by processing other data.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "10",
+                "chapter": "III",
+                "section": "2",
+                "paragraph": "5",
+                "parent_chunk_id": "eu_ai_act:article:10"
+              }
+            },
+            "score": 0.7035486278802987
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:recital:63",
+              "document_id": "eu_ai_act",
+              "text": "Recital 63\n\nThe fact that an AI system is classified as a high-risk AI system under this Regulation should not be interpreted as indicating that the use of the system is lawful under other acts of Union law or under national law compatible with Union law, such as on the protection of personal data, on the use of polygraphs and similar tools or other systems to detect the emotional state of natural persons. Any such use should continue to occur solely in accordance with the applicable requirements resulting from the Charter and from the applicable acts of secondary Union law and national law. This Regulation should not be understood as providing for the legal ground for processing of personal data, including special categories of personal data, where relevant, unless it is specifically otherwise provided for in this Regulation.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "recital": "63"
+              }
+            },
+            "score": 0.7034161444406337
+          }
+        ]
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.8300521,
+      "node": "reranker",
+      "run_id": "c0dff7e5-8ccf-08c5-9142-fe136339a67a"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.830637,
+      "node": "reranker",
+      "run_id": "c0dff7e5-8ccf-08c5-9142-fe136339a67a",
+      "latency_ms": 0.5838871002197266,
+      "llm_calls": [],
+      "payload": {
+        "reranked": [
+          {
+            "chunk": {
+              "id": "gdpr:article:33:paragraph:1",
+              "document_id": "gdpr",
+              "text": "Article 33(1) — Notification of a personal data breach to the supervisory authority\n\n1. In the case of a personal data breach, the controller shall without undue delay and, where feasible, not later than 72 hours after having become aware of it, notify the personal data breach to the supervisory authority competent in accordance with Article 55, unless the personal data breach is unlikely to result in a risk to the rights and freedoms of natural persons. Where the notification to the supervisory authority is not made within 72 hours, it shall be accompanied by reasons for the delay.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "33",
+                "chapter": "IV",
+                "section": "2",
+                "paragraph": "1",
+                "parent_chunk_id": "gdpr:article:33",
+                "cross_references": "article:55"
+              }
+            },
+            "score": 0.7277034845705647
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:33:paragraph:2",
+              "document_id": "gdpr",
+              "text": "Article 33(2) — Notification of a personal data breach to the supervisory authority\n\n2. The processor shall notify the controller without undue delay after becoming aware of a personal data breach.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "33",
+                "chapter": "IV",
+                "section": "2",
+                "paragraph": "2",
+                "parent_chunk_id": "gdpr:article:33"
+              }
+            },
+            "score": 0.7207502889185985
+          },
+          {
+            "chunk": {
+              "id": "gdpr:recital:85",
+              "document_id": "gdpr",
+              "text": "Recital 85\n\nA personal data breach may, if not addressed in an appropriate and timely manner, result in physical, material or non-material damage to natural persons such as loss of control over their personal data or limitation of their rights, discrimination, identity theft or fraud, financial loss, unauthorised reversal of pseudonymisation, damage to reputation, loss of confidentiality of personal data protected by professional secrecy or any other significant economic or social disadvantage to the natural person concerned. Therefore, as soon as the controller becomes aware that a personal data breach has occurred, the controller should notify the personal data breach to the supervisory authority without undue delay and, where feasible, not later than 72 hours after having become aware of it, unless the controller is able to demonstrate, in accordance with the accountability principle, that the personal data breach is unlikely to result in a risk to the rights and freedoms of natural persons. Where such notification cannot be achieved within 72 hours, the reasons for the delay should accompany the notification and information may be provided in phases without undue further delay.",
+              "metadata": {
+                "source": "gdpr",
+                "recital": "85"
+              }
+            },
+            "score": 0.719164984275999
+          },
+          {
+            "chunk": {
+              "id": "gdpr:article:33",
+              "document_id": "gdpr",
+              "text": "Article 33 — Notification of a personal data breach to the supervisory authority\n\n1. In the case of a personal data breach, the controller shall without undue delay and, where feasible, not later than 72 hours after having become aware of it, notify the personal data breach to the supervisory authority competent in accordance with Article 55, unless the personal data breach is unlikely to result in a risk to the rights and freedoms of natural persons. Where the notification to the supervisory authority is not made within 72 hours, it shall be accompanied by reasons for the delay.\n2. The processor shall notify the controller without undue delay after becoming aware of a personal data breach.\n3. The notification referred to in paragraph 1 shall at least: (a) describe the nature of the personal data breach including where possible, the categories and approximate number of data subjects concerned and the categories and approximate number of personal data records concerned; (b) communicate the name and contact details of the data protection officer or other contact point where more information can be obtained; (c) describe the likely consequences of the personal data breach; (d) describe the measures taken or proposed to be taken by the controller to address the personal data breach, including, where appropriate, measures to mitigate its possible adverse effects.\n4. Where, and in so far as, it is not possible to provide the information at the same time, the information may be provided in phases without undue further delay.\n5. The controller shall document any personal data breaches, comprising the facts relating to the personal data breach, its effects and the remedial action taken. That documentation shall enable the supervisory authority to verify compliance with this Article.",
+              "metadata": {
+                "source": "gdpr",
+                "article": "33",
+                "chapter": "IV",
+                "section": "2",
+                "cross_references": "article:55"
+              }
+            },
+            "score": 0.7175355721988945
+          },
+          {
+            "chunk": {
+              "id": "eu_ai_act:article:50:paragraph:3",
+              "document_id": "eu_ai_act",
+              "text": "Article 50(3) — Transparency obligations for providers and deployers of certain AI systems\n\n3. Deployers of an emotion recognition system or a biometric categorisation system shall inform the natural persons exposed thereto of the operation of the system, and shall process the personal data in accordance with Regulations (EU) 2016/679 and (EU) 2018/1725 and Directive (EU) 2016/680, as applicable. This obligation shall not apply to AI systems used for biometric categorisation and emotion recognition, which are permitted by law to detect, prevent or investigate criminal offences, subject to appropriate safeguards for the rights and freedoms of third parties, and in accordance with Union law.",
+              "metadata": {
+                "source": "eu_ai_act",
+                "article": "50",
+                "chapter": "IV",
+                "paragraph": "3",
+                "parent_chunk_id": "eu_ai_act:article:50"
+              }
+            },
+            "score": 0.7091440731797187
+          }
+        ]
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.830685,
+      "node": "generator",
+      "run_id": "b3324ad9-a04f-b291-0413-d04571a63f72"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.8320608,
+      "node": "generator",
+      "run_id": "b3324ad9-a04f-b291-0413-d04571a63f72",
+      "latency_ms": 1.3701915740966797,
+      "llm_calls": [
+        {
+          "provider": "deepseek",
+          "model": "deepseek/deepseek-reasoner",
+          "prompt_tokens": 1444,
+          "completion_tokens": 551,
+          "total_tokens": 1995,
+          "estimated_cost_usd": 0.00063574,
+          "latency_ms": 0.6480409938376397
+        }
+      ],
+      "payload": {
+        "answer": "The provided material is insufficient to answer whether the EU AI Act overrides or changes the GDPR's 72-hour breach notification deadline. The GDPR Article 33 sets the 72-hour notification requirement for controllers and requires processors to notify controllers without undue delay, but the only EU AI Act provision provided simply states that deployers must process personal data in accordance with the GDPR and does not amend or override Article 33's deadline.",
+        "citations": [
+          "gdpr:article:33",
+          "eu_ai_act:article:50:paragraph:3"
+        ],
+        "confidence": 0.1,
+        "abstained": true,
+        "abstain_reason": "No chunk contains any statement about the EU AI Act overriding, amending, or changing the GDPR's 72-hour breach notification deadline. The AI Act provision provided only references compliance with the GDPR and does not address breach notification timeframes, so the question cannot be confidently answered from the given sources."
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.832093,
+      "node": "critic",
+      "run_id": "04e0d179-2bfd-1932-1db8-a41a289265c9"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.8328269,
+      "node": "critic",
+      "run_id": "04e0d179-2bfd-1932-1db8-a41a289265c9",
+      "latency_ms": 0.7333755493164062,
+      "llm_calls": [],
+      "payload": {
+        "faithful": true,
+        "reason": null
+      }
+    },
+    {
+      "type": "node_started",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.8328488,
+      "node": "hitl_gate",
+      "run_id": "ecfe71f8-2320-cb71-c511-fa12534a09e4"
+    },
+    {
+      "type": "node_completed",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.839272,
+      "node": "hitl_gate",
+      "run_id": "ecfe71f8-2320-cb71-c511-fa12534a09e4",
+      "latency_ms": 6.4220428466796875,
+      "llm_calls": [],
+      "payload": {
+        "human_approved": null
+      }
+    },
+    {
+      "type": "graph_interrupted",
+      "thread_id": "686ad98d-4961-4384-a007-dfd6a6ad86a5",
+      "emitted_at": 1786155758.839299,
+      "interrupt": {
+        "type": "review",
+        "answer": "The provided material is insufficient to answer whether the EU AI Act overrides or changes the GDPR's 72-hour breach notification deadline. The GDPR Article 33 sets the 72-hour notification requirement for controllers and requires processors to notify controllers without undue delay, but the only EU AI Act provision provided simply states that deployers must process personal data in accordance with the GDPR and does not amend or override Article 33's deadline.",
+        "citations": [
+          "gdpr:article:33",
+          "eu_ai_act:article:50:paragraph:3"
+        ],
+        "confidence": 0.1,
+        "abstained": true,
+        "abstain_reason": "No chunk contains any statement about the EU AI Act overriding, amending, or changing the GDPR's 72-hour breach notification deadline. The AI Act provision provided only references compliance with the GDPR and does not address breach notification timeframes, so the question cannot be confidently answered from the given sources."
+      }
+    }
+  ]
+}

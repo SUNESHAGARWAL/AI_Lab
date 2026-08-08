@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 
 import { AgentGraph } from "@/components/graph/AgentGraph";
+import { Landing } from "@/components/landing/Landing";
+import { cachedFixtureFor, replayCachedQuery } from "@/lib/replay-client";
 import { streamQuery } from "@/lib/sse-client";
 import type { GraphEvent } from "@/lib/types/graph-events.generated";
 
@@ -10,11 +12,15 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [log, setLog] = useState<GraphEvent[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  async function handleSubmit(formEvent: React.FormEvent) {
-    formEvent.preventDefault();
-    if (!query.trim() || isStreaming) return;
+  /** Shared by the manual form's submit and every example-question click — the seam a
+   * later demo-mode cache can wrap or branch inside without touching either call site. */
+  async function runQuery(text: string) {
+    if (!text.trim() || isStreaming) return;
+    setHasStarted(true);
+    setQuery(text);
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -24,7 +30,14 @@ export default function Home() {
     setIsStreaming(true);
 
     try {
-      for await (const event of streamQuery({ query }, controller.signal)) {
+      // Curated example questions replay from a recorded fixture — zero live gateway
+      // cost. A free-typed question only takes this path if it happens to match one
+      // verbatim, which is correct: same question, same honest answer either way.
+      const fixture = cachedFixtureFor(text);
+      const source = fixture
+        ? replayCachedQuery(fixture, controller.signal)
+        : streamQuery({ query: text }, controller.signal);
+      for await (const event of source) {
         setLog((prev) => [...prev, event]);
       }
     } catch (err) {
@@ -43,6 +56,19 @@ export default function Home() {
     } finally {
       setIsStreaming(false);
     }
+  }
+
+  function handleSubmit(formEvent: React.FormEvent) {
+    formEvent.preventDefault();
+    runQuery(query);
+  }
+
+  if (!hasStarted) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-4xl flex-col p-6">
+        <Landing onAsk={runQuery} />
+      </main>
+    );
   }
 
   return (
@@ -66,7 +92,7 @@ export default function Home() {
         </button>
       </form>
 
-      <AgentGraph events={log} />
+      <AgentGraph events={log} onBackToExamples={() => setHasStarted(false)} />
     </main>
   );
 }
