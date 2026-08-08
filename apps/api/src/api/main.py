@@ -8,7 +8,9 @@ from redis.asyncio import Redis
 from api.config import get_settings
 from api.graph import build_graph
 from api.graph.checkpointer import postgres_checkpointer
+from api.ratelimit import RateLimiter
 from api.routes.health import router as health_router
+from api.routes.stream import router as stream_router
 from llm import Gateway
 from retrieval import (
     PgVectorRetriever,
@@ -45,6 +47,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # explicitly so the app doesn't depend on the two happening to match.
         redis_client = Redis.from_url(settings.redis_url)
         gateway = Gateway(redis_client=redis_client)
+        # Same redis_client the gateway/budget guard use — one Redis, no reason to
+        # open a second connection just for rate-limit counters.
+        rate_limiter = RateLimiter(redis_client, settings)
+        # Stashed individually (not just the compiled graph) so api.routes.stream can
+        # build a fresh per-request graph wired with a per-request RecordingGateway —
+        # see api.graph.streaming.RecordingGateway's docstring for why that isolation
+        # matters under concurrent SSE requests.
+        app.state.checkpointer = checkpointer
+        app.state.retriever = retriever
+        app.state.reranker = reranker
+        app.state.gateway = gateway
+        app.state.rate_limiter = rate_limiter
         app.state.graph = build_graph(checkpointer, retriever, reranker, gateway)
         logger.info("api.startup", env=settings.app_env)
         try:
@@ -55,3 +69,4 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="api", lifespan=lifespan)
 app.include_router(health_router)
+app.include_router(stream_router)

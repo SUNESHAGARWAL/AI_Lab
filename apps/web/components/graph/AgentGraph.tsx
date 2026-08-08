@@ -23,7 +23,17 @@ function vizReducer(state: GraphVizState, action: VizAction): GraphVizState {
 
 const RETRY_LABEL_MS = 2600;
 
-export function AgentGraph({ events }: { events: GraphEvent[] }) {
+const FRIENDLY_ERROR_REASONS = new Set(["rate_limited", "budget_exhausted"]);
+
+interface AgentGraphProps {
+  events: GraphEvent[];
+  /** Present only once a query has actually launched (see app/page.tsx) — lets the
+   * friendly rate-limit/budget-exhausted banner send the visitor back to the always-free
+   * example questions instead of just naming the problem. */
+  onBackToExamples?: () => void;
+}
+
+export function AgentGraph({ events, onBackToExamples }: AgentGraphProps) {
   const [state, dispatch] = useReducer(vizReducer, undefined, initialGraphVizState);
   const appliedCount = useRef(0);
   const reduceMotion = useReducedMotion() ?? false;
@@ -107,11 +117,25 @@ export function AgentGraph({ events }: { events: GraphEvent[] }) {
 
       <AnswerPanel completed={state.completed} chunksById={chunksById} reduceMotion={reduceMotion} />
 
-      {state.error && (
-        <div className="border-ink text-ink border border-dashed px-4 py-3 font-mono text-xs">
-          graph error{state.error.retryable ? " (retryable)" : ""}: {state.error.message}
-        </div>
-      )}
+      {state.error &&
+        (FRIENDLY_ERROR_REASONS.has(state.error.reason ?? "") ? (
+          <div className="border-citation bg-citation/5 border-l-4 px-5 py-4">
+            <p className="font-serif text-sm leading-relaxed text-ink">{state.error.message}</p>
+            {onBackToExamples && (
+              <button
+                type="button"
+                onClick={onBackToExamples}
+                className="text-citation mt-2 font-mono text-xs underline underline-offset-2"
+              >
+                back to the example questions
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="border-ink text-ink border border-dashed px-4 py-3 font-mono text-xs">
+            graph error{state.error.retryable ? " (retryable)" : ""}: {state.error.message}
+          </div>
+        ))}
 
       {showLog && <EventLog events={events} />}
     </div>

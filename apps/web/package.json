@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "vitest run",
     "generate:types": "uv run python ../../scripts/gen_event_types.py | npx json-schema-to-typescript --unreachableDefinitions > lib/types/graph-events.generated.ts"
   },
   "dependencies": {
@@ -26,6 +27,7 @@
     "eslint-config-next": "^15.4.0",
     "json-schema-to-typescript": "^15.0.4",
     "tailwindcss": "^4.3.3",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.10"
   }
 }
