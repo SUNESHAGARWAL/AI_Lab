@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from core.testing import FakeReranker
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio import Redis
 
 from api.config import get_settings
@@ -68,5 +69,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="api", lifespan=lifespan)
+# Explicit origin allowlist, never a wildcard — settings.frontend_origin is
+# comma-separated so both the deployed Vercel domain and a local dev frontend can be
+# listed at once. No credentials (cookies/auth headers) cross this boundary, so
+# allow_credentials stays at its default False.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in settings.frontend_origin.split(",")],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 app.include_router(health_router)
 app.include_router(stream_router)

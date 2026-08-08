@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     # demo running on my own API keys; tune via env var, no redeploy needed.
     live_query_rate_limit_per_hour: int = 5
 
+    # Comma-separated origins CORSMiddleware allows — never a wildcard in production.
+    # Defaults to the local frontend dev server so `just dev` needs no .env entry;
+    # production (Railway) MUST set this explicitly to the real Vercel domain(s).
+    frontend_origin: str = "http://localhost:3000"
+
 
 @lru_cache
 def get_settings() -> Settings:
