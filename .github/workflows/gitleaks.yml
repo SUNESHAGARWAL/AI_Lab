@@ -1,0 +1,20 @@
+name: gitleaks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  scan:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      # Public personal-account repo — no GITLEAKS_LICENSE needed. If this repo ever
+      # moves under a GitHub organization, gitleaks-action's docs say a license key
+      # becomes required; add GITLEAKS_LICENSE as a repo secret at that point.
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

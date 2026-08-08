@@ -1,11 +1,9 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  async rewrites() {
-    // Dev-only proxy to the FastAPI backend — avoids adding CORS middleware to a
-    // public-facing API for what's currently a same-machine dev convenience.
-    return [{ source: "/api/:path*", destination: "http://localhost:8000/:path*" }];
-  },
-};
+// No rewrite proxy — sse-client.ts talks directly to NEXT_PUBLIC_API_URL (the FastAPI
+// backend's own origin) in both dev and production, and apps/api's CORSMiddleware
+// (FRONTEND_ORIGIN env var) is what makes that cross-origin call work. See
+// docs/PRODUCTION_DEPLOY.md for the local-dev env var setup this requires.
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
