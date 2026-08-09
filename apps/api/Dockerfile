@@ -64,6 +64,18 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --python /app/.venv/bin/python torch --index-url https://download.pytorch.org/whl/cpu
 
+# The swap above uninstalls the CUDA torch package's own metadata but — verified by
+# actually building this image and inspecting it — leaves the sibling nvidia-*/triton
+# packages' files (~3.5GB) orphaned on disk: `pip list` no longer shows them, but their
+# site-packages directories remain. Confirmed importing torch works fully without any
+# of this (it's the +cpu build), so it's dead weight, not a real dependency — remove it
+# explicitly rather than trust the uninstall to have caught it.
+RUN rm -rf /app/.venv/lib/python3.12/site-packages/nvidia \
+           /app/.venv/lib/python3.12/site-packages/triton \
+           /app/.venv/lib/python3.12/site-packages/nvidia_* \
+           /app/.venv/lib/python3.12/site-packages/cuda \
+           /app/.venv/lib/python3.12/site-packages/cuda_*
+
 # Bake the embedding model into the image so boot never depends on HuggingFace Hub being
 # reachable — see the plan's Stage 1 tradeoff note (reliable network-independent cold start
 # over a smaller image). The reranker (core.testing.FakeReranker) needs no weights at all —
