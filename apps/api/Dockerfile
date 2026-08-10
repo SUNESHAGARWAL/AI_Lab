@@ -72,7 +72,7 @@ RUN --mount=type=cache,id=s/8f040c6b-c0af-4507-8ba7-24ae203fb052-uv-cache,target
 # worth the added resolution complexity for a single deploy-time concern), swaps it for
 # the ~200MB CPU build with zero CUDA deps.
 RUN --mount=type=cache,id=s/8f040c6b-c0af-4507-8ba7-24ae203fb052-uv-cache,target=/root/.cache/uv \
-    uv pip install --python /app/.venv/bin/python torch --index-url https://download.pytorch.org/whl/cpu
+    uv pip install --reinstall --python /app/.venv/bin/python torch --index-url https://download.pytorch.org/whl/cpu
 
 # The swap above uninstalls the CUDA torch package's own metadata but — verified by
 # actually building this image and inspecting it — leaves the sibling nvidia-*/triton
