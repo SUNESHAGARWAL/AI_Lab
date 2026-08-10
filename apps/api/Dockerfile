@@ -128,4 +128,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["uvicorn", "api.main:app", "--app-dir", "apps/api/src", "--host", "0.0.0.0", "--port", "8000"]
+# --loop asyncio, not uvicorn's default uvloop: psycopg_pool's AsyncConnectionPool.open()
+# hangs indefinitely under uvloop specifically (reproduced locally — PoolTimeout after the
+# configured 10s under uvloop, clean success under plain asyncio). Confirmed via direct
+# reproduction outside uvicorn, not a guess.
+CMD ["uvicorn", "api.main:app", "--app-dir", "apps/api/src", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio"]
