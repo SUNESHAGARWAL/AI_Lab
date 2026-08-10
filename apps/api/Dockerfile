@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # Build from the REPO ROOT, not apps/api — this is a uv workspace (root pyproject.toml +
 # uv.lock, apps/api/pyproject.toml declares core/llm/retrieval/telemetry as
 # `{ workspace = true }` path dependencies), so the build context needs the sibling
