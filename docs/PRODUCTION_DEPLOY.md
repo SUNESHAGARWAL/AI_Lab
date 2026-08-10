@@ -27,6 +27,7 @@ root**, not `apps/api` — the Dockerfile is a uv workspace build and needs the 
 | Variable | Required | Value |
 |---|---|---|
 | `DATABASE_URL` | yes | Neon **pooled** connection string (has `-pooler` in the host) |
+| `MIGRATIONS_DATABASE_URL` | yes | Neon **direct** connection string (no `-pooler`) — migrations run over this, not `DATABASE_URL`; running them over the pooled connection concurrently with the pool's own startup crashes uvicorn outright (reproduced directly — silent crash, only under uvicorn + a pooled connection) |
 | `REDIS_URL` | yes | Upstash Redis connection string |
 | `DEEPSEEK_API_KEY` | yes | your DeepSeek key |
 | `GROQ_API_KEY` | yes | your Groq key |

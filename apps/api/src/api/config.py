@@ -9,6 +9,15 @@ class Settings(BaseSettings):
     app_env: str = "development"
     database_url: str
     redis_url: str
+    # Migrations run over this URL instead of database_url when set. Needed against
+    # Neon: database_url is the pooled (PgBouncer transaction-mode) connection Railway
+    # runtime traffic uses, but running Alembic's migration + the pool's own startup
+    # concurrently over a pooled connection crashes uvicorn's ASGI process outright
+    # (reproduced locally — silent, no traceback, only under uvicorn + pooled, not a
+    # bare script and not the direct connection). Point this at Neon's direct
+    # connection string in production; falls back to database_url for local dev,
+    # where Postgres isn't pooled at all.
+    migrations_database_url: str | None = None
 
     # The demo endpoint is public — a length cap is the input guard required by
     # CLAUDE.md's security rules for every public path.
