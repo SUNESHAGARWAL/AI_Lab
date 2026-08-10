@@ -58,8 +58,16 @@ COPY packages/telemetry packages/telemetry
 # image lean — see the COPY list above). --frozen trusts the already-committed,
 # locally-validated uv.lock as-is, which is the property that actually matters for a
 # reproducible image build.
+#
+# Editable (not --no-editable): packages/retrieval's alembic.ini and migrations/ live
+# alongside its src/ dir, outside what hatchling packages into the wheel (see
+# packages/retrieval/pyproject.toml's [tool.hatch.build.targets.wheel]). migrate.py
+# locates alembic.ini via Path(__file__).resolve().parents[2], which only resolves
+# correctly when the installed package still points back at its real source tree —
+# i.e. an editable install. The runtime stage below COPYs packages/* again so that
+# source tree actually exists at runtime, not just during this build.
 RUN --mount=type=cache,id=s/8f040c6b-c0af-4507-8ba7-24ae203fb052-uv-cache,target=/root/.cache/uv \
-    uv sync --frozen --no-editable --package api
+    uv sync --frozen --package api
 
 # packages/retrieval's SentenceTransformerEmbedder runs CPU-only (device="cpu", hardcoded
 # — see packages/retrieval/src/retrieval/embedder.py). uv.lock's default resolution pulls
@@ -105,6 +113,10 @@ WORKDIR /app
 COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
 COPY --from=builder --chown=appuser:appuser /app/.cache/huggingface /app/.cache/huggingface
 COPY --chown=appuser:appuser apps/api apps/api
+COPY --chown=appuser:appuser packages/core packages/core
+COPY --chown=appuser:appuser packages/llm packages/llm
+COPY --chown=appuser:appuser packages/retrieval packages/retrieval
+COPY --chown=appuser:appuser packages/telemetry packages/telemetry
 
 ENV PATH="/app/.venv/bin:$PATH" \
     HF_HOME=/app/.cache/huggingface \
