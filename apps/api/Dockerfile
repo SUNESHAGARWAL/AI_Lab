@@ -28,21 +28,24 @@ WORKDIR /app
 # s/<SERVICE_ID>-<name> prefix on every cache mount for its build cache to attach —
 # a build ARG doesn't work, since Railway parses the Dockerfile before args are available).
 # Harmless for local `docker build` — the id is just a cache namespace token there.
+#
+# Railway's builder also rejects --mount=type=bind (only type=cache is supported), unlike
+# plain BuildKit — so the pyproject.toml files are COPYed in directly instead of
+# bind-mounted, ahead of the full source COPY below.
+COPY uv.lock pyproject.toml ./
+COPY apps/api/pyproject.toml apps/api/pyproject.toml
+COPY packages/core/pyproject.toml packages/core/pyproject.toml
+COPY packages/llm/pyproject.toml packages/llm/pyproject.toml
+COPY packages/retrieval/pyproject.toml packages/retrieval/pyproject.toml
+COPY packages/telemetry/pyproject.toml packages/telemetry/pyproject.toml
+
 RUN --mount=type=cache,id=s/8f040c6b-c0af-4507-8ba7-24ae203fb052-uv-cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    --mount=type=bind,source=apps/api/pyproject.toml,target=apps/api/pyproject.toml \
-    --mount=type=bind,source=packages/core/pyproject.toml,target=packages/core/pyproject.toml \
-    --mount=type=bind,source=packages/llm/pyproject.toml,target=packages/llm/pyproject.toml \
-    --mount=type=bind,source=packages/retrieval/pyproject.toml,target=packages/retrieval/pyproject.toml \
-    --mount=type=bind,source=packages/telemetry/pyproject.toml,target=packages/telemetry/pyproject.toml \
     uv sync --frozen --no-install-workspace --package api
 
 # Now the real source — scoped to exactly what apps/api's dependency closure needs
 # (core/llm/retrieval/telemetry per apps/api/pyproject.toml's [tool.uv.sources]), not the
 # whole monorepo (apps/ingest and packages/evals pull ragas/deepeval — unwanted weight in
 # a production API image).
-COPY pyproject.toml uv.lock ./
 COPY apps/api apps/api
 COPY packages/core packages/core
 COPY packages/llm packages/llm
