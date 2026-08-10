@@ -23,7 +23,7 @@ WORKDIR /app
 # Deps-only layer, cached independently of source changes — see
 # docs.astral.sh/uv/guides/integration/docker/. --no-install-workspace skips the (not yet
 # present) workspace member source itself, just resolves third-party dependencies.
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=apps/api/pyproject.toml,target=apps/api/pyproject.toml \
@@ -50,7 +50,7 @@ COPY packages/telemetry packages/telemetry
 # image lean — see the COPY list above). --frozen trusts the already-committed,
 # locally-validated uv.lock as-is, which is the property that actually matters for a
 # reproducible image build.
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
     uv sync --frozen --no-editable --package api
 
 # packages/retrieval's SentenceTransformerEmbedder runs CPU-only (device="cpu", hardcoded
@@ -63,7 +63,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # tried and didn't take effect for this project's multi-platform universal lock, not
 # worth the added resolution complexity for a single deploy-time concern), swaps it for
 # the ~200MB CPU build with zero CUDA deps.
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
     uv pip install --python /app/.venv/bin/python torch --index-url https://download.pytorch.org/whl/cpu
 
 # The swap above uninstalls the CUDA torch package's own metadata but — verified by
