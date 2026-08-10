@@ -602,8 +602,11 @@ name = "evals"
 version = "0.1.0"
 source = { editable = "packages/evals" }
 dependencies = [
+    { name = "api" },
     { name = "core" },
     { name = "deepeval" },
+    { name = "langgraph" },
+    { name = "llm" },
     { name = "ragas" },
     { name = "retrieval" },
     { name = "telemetry" },
@@ -612,8 +615,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "api", editable = "apps/api" },
     { name = "core", editable = "packages/core" },
     { name = "deepeval", specifier = "==4.1.5" },
+    { name = "langgraph", specifier = "==1.2.10" },
+    { name = "llm", editable = "packages/llm" },
     { name = "ragas" },
     { name = "retrieval", editable = "packages/retrieval" },
     { name = "telemetry", editable = "packages/telemetry" },
