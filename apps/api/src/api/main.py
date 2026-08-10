@@ -31,7 +31,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # Must run before the vector-aware pool opens — its configure callback
         # registers the pgvector type adapter, which needs the extension this
         # creates to already exist. See retrieval.migrate's module docstring.
-        await apply_migrations(settings.database_url)
+        # migrations_database_url, not database_url — see Settings' docstring for why
+        # migrations and the runtime pool need different connection strings against Neon.
+        await apply_migrations(settings.migrations_database_url or settings.database_url)
         pool = create_pool(settings.database_url)
         await pool.open(wait=True, timeout=10)
         embedder = SentenceTransformerEmbedder()
