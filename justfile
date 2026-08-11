@@ -3,6 +3,7 @@ dev:
     @echo "postgres+redis up. In separate terminals, run:"
     @echo "  uv run uvicorn api.main:app --reload --app-dir apps/api/src"
     @echo "  pnpm --filter web dev"
+    @echo "web dev proxies /api/* to localhost:8000 (see apps/web/next.config.ts) — the API must be running there."
 
 test:
     uv run pytest -m "not llm and not integration"
