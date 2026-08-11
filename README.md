@@ -108,8 +108,9 @@ that's what the live graph on the demo is rendering.
 
 ## What the numbers say
 
-Layer 3 generation scorecard, all 36 golden items
-([full report](evals/reports/generation_scorecard_20260807T1425427288930000.md)):
+Layer 3 generation scorecard, all 36 golden items as of that run — before `cand-026` was
+added. Scorecards are generated artifacts, not checked in; `just evals-generation`
+rewrites them into `evals/reports/`.
 
 | Metric | Score |
 |---|---|
@@ -119,18 +120,19 @@ Layer 3 generation scorecard, all 36 golden items
 | citation validity | 0.9339 |
 | context precision | 0.1667 ⚠️ |
 
-Retrieval (Layer 1/2, deterministic, 30 scored items):
+Retrieval (Layer 1/2, deterministic, 31 scored items — 6 out-of-scope excluded):
 
 | k | recall@k | MRR@k | nDCG@k |
 |---:|---:|---:|---:|
-| 1 | 0.6500 | 0.6667 | 0.6667 |
-| 3 | 0.9667 | 0.7889 | 0.8341 |
-| 5 | 1.0000 | 0.7956 | 0.8470 |
+| 1 | 0.6290 | 0.6452 | 0.6452 |
+| 3 | 0.9355 | 0.7634 | 0.8072 |
+| 5 | 0.9677 | 0.7699 | 0.8197 |
+| 10 | 1.0000 | 0.7735 | 0.8294 |
 
-Recall@5 is 1.0 — on the golden set, the chunk the answer needs is *always* inside the
-five the generator gets shown. That makes the failure in
-[Known gaps](#known-gaps-honestly) a case the golden set doesn't cover yet, which is
-exactly the useful kind of gap to find.
+Recall@5 used to read 1.0000 here. It dropped when `cand-026` was added — a question the
+system genuinely gets wrong, documented in [Known gaps](#known-gaps-honestly). A golden
+set that only contains questions the system already answers measures nothing, so the
+lower number is the more useful one.
 
 **About that 0.1667.** It's the one metric that looks broken, and it's the one I'd want
 to be asked about. It's computed as an exact set intersection between the golden set's
@@ -202,10 +204,32 @@ answers "who must appoint."
 
 The interesting part: re-running those same candidates through the disabled cross-encoder
 moves Article 37(1) from **rank 9 to rank 2** — comfortably inside the cutoff. So the
-component that would fix this query is the one the golden set says to leave off. That
-tension is unresolved on purpose: one anecdote doesn't overturn a measured ADR. The
-correct next step is to add this case to the golden set with provenance and re-run both
-configurations, not to flip a switch because a single query looked bad.
+component that would fix this query is the one the golden set says to leave off.
+
+The trigger is narrower than it looks. The set already held the same question in the
+statute's own vocabulary — *"when am I required to **designate** a DPO under Article 37"* —
+which retrieves at rank 2. Dropping the article number changes nothing; swapping the verb
+to **appoint** is what costs four ranks. It isn't a general vocabulary gap either:
+everyday paraphrases of two other golden items ("privacy impact assessment", "data leak")
+still rank 2nd and 1st. The failure needs *both* an everyday synonym and a dense cluster
+of near-identical siblings competing for the same five slots.
+
+So rather than flip a switch on one anecdote, the case went into the golden set as
+`cand-026` and both configurations were re-run over 37 items:
+
+| k | recall dense → rerank | nDCG dense → rerank |
+|---:|---|---|
+| 1 | 0.6290 → 0.5323 | 0.6452 → 0.5484 |
+| 3 | 0.9355 → 0.9355 | 0.8072 → 0.7757 |
+| 5 | 0.9677 → 0.9355 | 0.8197 → 0.7757 |
+| 10 | 1.0000 → 0.9355 | 0.8294 → 0.7757 |
+
+**The reranker stays off.** It loses on every metric except a tie at recall@3 — *with the
+case that motivated the revisit now in the set.* It fixes `cand-026` and breaks more than
+it fixes ([ADR 0003 addendum](docs/adr/0003-reranking-evaluated-and-deferred.md)).
+
+So `cand-026` is left failing on purpose. It marks the boundary of what this retrieval
+stack handles, in the one place that can't be quietly forgotten.
 
 **Also deferred:** token-by-token answer streaming (the contract streams node-level
 events; true token streaming needs its own ADR covering cache/retry/budget interactions),
