@@ -157,7 +157,7 @@ assessment" for `article:35:paragraph:3`, "data leak" for `article:33:paragraph:
 retrieve at ranks 2 and 1. The failure needs **both** an everyday synonym *and* a dense
 cluster of near-identical sibling paragraphs competing for the same slots.
 
-**What was added.** `cand-026` — the failing phrasing, `factual_lookup`, `hard`, targeting
+**What was added.** `cand-041` — the failing phrasing, `factual_lookup`, `hard`, targeting
 `gdpr:article:37:paragraph:1`. It is deliberately kept distinct from `cand-022` so the
 breakdown shows the phrasing sensitivity directly. The paraphrases that already rank 1–2
 were deliberately *not* added: a golden item that passes trivially guards nothing and
@@ -178,10 +178,51 @@ still costs eval tokens.
 *with the case that motivated the revisit now in the set*. Note recall@10 falling
 1.0000 → 0.9355: because `--rerank` fetches a wider pool (20) before truncating, this is
 the cross-encoder actively demoting two targets below rank 10, not a harness artifact. It
-fixes `cand-026` and breaks more than it fixes.
+fixes `cand-041` and breaks more than it fixes.
 
-**`cand-026` is therefore left failing on purpose.** It marks the boundary of what this
+**`cand-041` is therefore left failing on purpose.** It marks the boundary of what this
 retrieval stack handles, in the one place that cannot be quietly forgotten. Per this
 ADR's own Consequences list, the open options remain (a) `max_length`/pool-size tuning,
 (b) a domain-exposed reranker, (c) a larger golden set — plus (d) hybrid lexical
 retrieval, which ADR 0002's title anticipates but which is not currently built.
+
+### Follow-up, same day: what `cand-041` actually exposed
+
+The item was renumbered `cand-026` → `cand-041`: `cand-026` was already taken in
+`evals/datasets/candidates_for_review.jsonl` by a different question, and
+`promote_to_golden_set` skips any candidate whose id is already in the golden set — so
+the collision would have silently made the real `cand-026` unpromotable forever.
+
+Two Layer 3 runs over the 37-item set, identical retrieval, differing only in the
+generator/critic system prompts (the untrusted-input hardening added for prompt
+injection):
+
+```
+                      abstained  faithfulness  citation_validity  context_precision
+before hardening         no          1.00            1.00               0.00
+after  hardening         yes          —              0.00               0.00
+```
+
+`context_precision = 0.0` in both runs: `gdpr:article:37:paragraph:1` was never among the
+five chunks the generator saw. Before hardening the model answered anyway, from the
+neighbouring DPO paragraphs, and the judge scored it **1.0 on faithfulness, answer
+relevancy and citation validity** — internally faithful to text that does not answer the
+question. `appropriate_abstention` counted that as correct, so the aggregate read 37/37.
+
+Three consequences worth keeping:
+
+1. **A perfect abstention score can hide a wrong answer.** The metric only asks whether
+   the abstain flag matched expectation; it never asks whether an answer was right. Here
+   the flattering run was the incorrect one.
+2. **`context_precision` was the only honest signal, and ADR 0006 is narrower than it
+   reads.** A low *mean* is a dual-grain artifact, as documented. A **0.0 on one item** is
+   not grain — it means nothing relevant was retrieved, and averaging destroys that
+   distinction.
+3. **The planner does not rescue this query.** An earlier hypothesis was that its rewrite
+   normalises "appoint" to the statute's "designate". Measured directly: 0/5 runs
+   rewrote it at all — the question passes through verbatim, so retrieval misses every
+   time. The hypothesis was wrong.
+
+After hardening, the honest outcome (abstain) is scored as a false abstention and the
+headline becomes 36/37. That is the correct trade for this product, and `cand-041` stays
+in the set failing on purpose.
