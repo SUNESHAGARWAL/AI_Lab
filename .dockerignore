@@ -1,0 +1,15 @@
+# apps/api/Dockerfile builds from this (repo) root context — see that file's top
+# comment for why. Keep the transferred context to what it actually COPYs.
+.venv
+__pycache__
+*.pyc
+.git
+.env
+.env.*
+apps/web
+apps/ingest
+packages/evals
+node_modules
+evals/datasets
+.claude
+*.log
