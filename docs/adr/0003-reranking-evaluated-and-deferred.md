@@ -130,3 +130,58 @@ fact):
 - Any future change to `apps/api/src/api/main.py`'s reranker wiring must cite a
   `run-retrieval --rerank` result in its commit message, per `CLAUDE.md`'s
   provenance expectations for retrieval-affecting changes.
+
+---
+
+## Addendum — 2026-08-11: re-tested against a real-world failure, decision unchanged
+
+**What prompted the revisit.** The deployed demo abstained on a plainly answerable
+question: *"Who must appoint a data protection officer under GDPR?"* The abstention
+itself was correct behaviour — the generator was never shown the governing text — but
+the retrieval behind it was not.
+
+**Diagnosis.** `gdpr:article:37:paragraph:1` *is* indexed. Dense cosine ranks it **9th**
+for that phrasing, and the whole top-10 sits inside a **0.026** score band: Articles 37
+and 38 are eight paragraphs all about DPOs, and `bge-small-en-v1.5` cannot separate them.
+The `DEFAULT_RERANK_TOP_N = 5` cut then drops the one paragraph that answers the
+question. Re-scoring those same candidates with `CrossEncoderReranker` in isolation moves
+the target from **rank 9 to rank 2** — i.e. exactly the failure this ADR's reranker is
+supposed to fix.
+
+**The trigger is narrower than it first looked.** The golden set already contained
+`cand-022`, targeting the same chunk in the statute's own vocabulary ("*designate* … under
+Article 37"), which retrieves at rank 2. Removing the article number keeps it at rank 2;
+swapping the verb *designate* → *appoint* is what drops it to 9. But this is not a general
+vocabulary-gap problem: everyday paraphrases of two other golden items ("privacy impact
+assessment" for `article:35:paragraph:3`, "data leak" for `article:33:paragraph:1`)
+retrieve at ranks 2 and 1. The failure needs **both** an everyday synonym *and* a dense
+cluster of near-identical sibling paragraphs competing for the same slots.
+
+**What was added.** `cand-026` — the failing phrasing, `factual_lookup`, `hard`, targeting
+`gdpr:article:37:paragraph:1`. It is deliberately kept distinct from `cand-022` so the
+breakdown shows the phrasing sensitivity directly. The paraphrases that already rank 1–2
+were deliberately *not* added: a golden item that passes trivially guards nothing and
+still costs eval tokens.
+
+**Re-run, 37 items / 31 scored, `--rerank-pool-size 20`:**
+
+```
+   k |   recall@k dense →  rerank |     nDCG@k dense →  rerank
+------------------------------------------------------------
+   1 |     0.6290 →  0.5323       |     0.6452 →  0.5484
+   3 |     0.9355 →  0.9355       |     0.8072 →  0.7757
+   5 |     0.9677 →  0.9355       |     0.8197 →  0.7757
+  10 |     1.0000 →  0.9355       |     0.8294 →  0.7757
+```
+
+**Verdict: the reranker stays off.** It loses on every metric except a tie at recall@3 —
+*with the case that motivated the revisit now in the set*. Note recall@10 falling
+1.0000 → 0.9355: because `--rerank` fetches a wider pool (20) before truncating, this is
+the cross-encoder actively demoting two targets below rank 10, not a harness artifact. It
+fixes `cand-026` and breaks more than it fixes.
+
+**`cand-026` is therefore left failing on purpose.** It marks the boundary of what this
+retrieval stack handles, in the one place that cannot be quietly forgotten. Per this
+ADR's own Consequences list, the open options remain (a) `max_length`/pool-size tuning,
+(b) a domain-exposed reranker, (c) a larger golden set — plus (d) hybrid lexical
+retrieval, which ADR 0002's title anticipates but which is not currently built.
