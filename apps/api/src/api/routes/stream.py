@@ -90,12 +90,28 @@ async def _sse_body(
             seq += 1
 
 
+def client_key_for(request: Request) -> str:
+    """The rate-limit bucket key for a request.
+
+    request.client.host alone is the connecting socket's address — behind Railway's
+    edge proxy that is the *proxy*, so every visitor on the internet would share one
+    bucket and the demo would lock out globally after N live queries.
+
+    X-Real-IP, not X-Forwarded-For: Railway overwrites X-Real-IP with the real client
+    address, while it *appends* to X-Forwarded-For and leaves any client-supplied
+    entries in place — so XFF is attacker-controlled and would let a caller rotate
+    spoofed values to skip the limit entirely. Falls back to the socket address for
+    local/dev traffic, where nothing sits in front of uvicorn.
+    """
+    real_ip = request.headers.get("x-real-ip", "").strip()
+    if real_ip:
+        return real_ip
+    return request.client.host if request.client else "unknown"
+
+
 @router.post("/query/stream")
 async def stream_query(payload: StreamQueryRequest, request: Request) -> StreamingResponse:
-    # No trusted-proxy/X-Forwarded-For handling yet — request.client.host is the
-    # connecting socket's address, correct for direct local/dev traffic but will read
-    # as the proxy's IP once this sits behind one. Deploy-time follow-up, not this pass.
-    client_key = request.client.host if request.client else "unknown"
+    client_key = client_key_for(request)
     return StreamingResponse(
         _sse_body(payload, request.app.state, client_key), media_type="text/event-stream"
     )
