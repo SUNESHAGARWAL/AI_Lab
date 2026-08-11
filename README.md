@@ -108,17 +108,20 @@ that's what the live graph on the demo is rendering.
 
 ## What the numbers say
 
-Layer 3 generation scorecard, all 36 golden items as of that run — before `cand-026` was
-added. Scorecards are generated artifacts, not checked in; `just evals-generation`
-rewrites them into `evals/reports/`.
+Layer 3 generation scorecard, all 37 golden items. Scorecards are generated artifacts,
+not checked in; `just evals-generation` rewrites them into `evals/reports/`.
 
 | Metric | Score |
 |---|---|
-| **appropriate abstention** | **36/36** — 0 false abstentions, 0 false answers |
-| faithfulness | 0.9645 |
-| answer relevancy | 0.9794 |
-| citation validity | 0.9339 |
-| context precision | 0.1667 ⚠️ |
+| appropriate abstention | 36/37 — 1 false abstention, 0 false answers |
+| **faithfulness** | **0.9877** |
+| answer relevancy | 0.9767 |
+| citation validity | 0.9054 |
+| context precision | 0.1676 ⚠️ |
+
+That one false abstention is `cand-041`, and it is the most interesting number here —
+see [Known gaps](#known-gaps-honestly). An earlier run scored a flawless 37/37 by
+*answering* it instead. That answer was worse.
 
 Retrieval (Layer 1/2, deterministic, 31 scored items — 6 out-of-scope excluded):
 
@@ -129,7 +132,7 @@ Retrieval (Layer 1/2, deterministic, 31 scored items — 6 out-of-scope excluded
 | 5 | 0.9677 | 0.7699 | 0.8197 |
 | 10 | 1.0000 | 0.7735 | 0.8294 |
 
-Recall@5 used to read 1.0000 here. It dropped when `cand-026` was added — a question the
+Recall@5 used to read 1.0000 here. It dropped when `cand-041` was added — a question the
 system genuinely gets wrong, documented in [Known gaps](#known-gaps-honestly). A golden
 set that only contains questions the system already answers measures nothing, so the
 lower number is the more useful one.
@@ -215,7 +218,7 @@ still rank 2nd and 1st. The failure needs *both* an everyday synonym and a dense
 of near-identical siblings competing for the same five slots.
 
 So rather than flip a switch on one anecdote, the case went into the golden set as
-`cand-026` and both configurations were re-run over 37 items:
+`cand-041` and both configurations were re-run over 37 items:
 
 | k | recall dense → rerank | nDCG dense → rerank |
 |---:|---|---|
@@ -225,11 +228,34 @@ So rather than flip a switch on one anecdote, the case went into the golden set 
 | 10 | 1.0000 → 0.9355 | 0.8294 → 0.7757 |
 
 **The reranker stays off.** It loses on every metric except a tie at recall@3 — *with the
-case that motivated the revisit now in the set.* It fixes `cand-026` and breaks more than
+case that motivated the revisit now in the set.* It fixes `cand-041` and breaks more than
 it fixes ([ADR 0003 addendum](docs/adr/0003-reranking-evaluated-and-deferred.md)).
 
-So `cand-026` is left failing on purpose. It marks the boundary of what this retrieval
-stack handles, in the one place that can't be quietly forgotten.
+### The part worth reading twice
+
+`cand-041` also caught the generator doing something worse than failing. Two Layer 3 runs,
+same retrieval, differing only in the generator's system prompt:
+
+| run | abstained? | faithfulness | citation validity | **context precision** |
+|---|---|---|---|---|
+| before prompt hardening | no | 1.0 | 1.0 | **0.0** |
+| after | yes | — | 0.0 | **0.0** |
+
+`context_precision = 0.0` in *both*: Article 37(1) was never among the five chunks shown.
+So in the first run the model answered "who must appoint a DPO" from the *neighbouring*
+paragraphs — group appointments, qualifications, contracts — and scored a **flawless 1.0
+on faithfulness, relevancy, and citation validity**. Every headline metric said the answer
+was perfect. It was faithful to text that doesn't answer the question.
+
+The only number that dissented was `context_precision`, the metric flagged above as a
+measurement artifact. On average it *is* an artifact of dual-grain chunking. But a **0.0**
+on a single item isn't grain — it means nothing relevant was retrieved at all, and the
+mean hides that completely.
+
+After hardening, the model abstains instead, which the abstention metric scores as a
+*failure*. That trade — a worse-looking scorecard for honest behaviour — is the one this
+project exists to make. `cand-041` is left failing on purpose: it marks the boundary of
+what this retrieval stack handles, somewhere it can't be quietly forgotten.
 
 **Also deferred:** token-by-token answer streaming (the contract streams node-level
 events; true token streaming needs its own ADR covering cache/retry/budget interactions),
