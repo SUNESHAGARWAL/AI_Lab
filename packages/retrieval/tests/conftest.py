@@ -6,6 +6,7 @@ from psycopg_pool import AsyncConnectionPool
 from retrieval.embedder import SentenceTransformerEmbedder
 from retrieval.migrate import apply_migrations
 from retrieval.pool import create_pool
+from retrieval.reranker import CrossEncoderReranker
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://app:app@localhost:5432/app")
 
@@ -49,3 +50,8 @@ async def _clean_chunks_table(pg_pool: AsyncConnectionPool):
 @pytest.fixture(scope="session")
 def embedder() -> SentenceTransformerEmbedder:
     return SentenceTransformerEmbedder()
+
+
+@pytest.fixture(scope="session")
+def reranker() -> CrossEncoderReranker:
+    return CrossEncoderReranker()
