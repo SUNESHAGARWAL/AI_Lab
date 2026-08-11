@@ -1,0 +1,79 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+# A second push to the same branch makes the first run irrelevant — cancel it rather
+# than burn Actions minutes finishing a superseded commit.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: api — lint, types, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          # Pinned to the same uv the production image builds with
+          # (apps/api/Dockerfile), so a resolver change can't pass here and fail there.
+          version: "0.11.23"
+          enable-cache: true
+
+      # --locked, not --frozen: this fails if uv.lock has drifted from any
+      # pyproject.toml rather than quietly installing a stale graph. That drift is not
+      # hypothetical — it reached production once and broke the deploy build.
+      - name: Sync workspace
+        run: uv sync --locked
+
+      - run: uv run ruff check .
+
+      # No `ruff format --check` gate yet, deliberately. The config sets
+      # line-length = 100 but the code is consistently hand-wrapped nearer 88, so the
+      # formatter would unwrap ~21 files and overwrite a real style choice. Settle the
+      # line-length question first, then add the gate — an enforced formatter that
+      # fights the house style is worse than none.
+
+      # strict on packages/core only, per CLAUDE.md — core is the dependency-inversion
+      # boundary every adapter implements against, so it carries the strictest contract.
+      - run: uv run mypy packages/core
+
+      # Excludes llm/integration marks: those need live provider keys plus Postgres and
+      # Redis, which is a nightly/manual concern, not a per-push gate.
+      - name: Tests
+        run: uv run pytest -m "not llm and not integration"
+
+  web:
+    name: web — lint, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # corepack reads apps/web's own "packageManager" pin, so CI and Vercel resolve
+      # the identical pnpm version without repeating it here.
+      - name: Enable corepack
+        run: corepack enable
+
+      # --frozen-lockfile is what Vercel's build does. Running it here means lockfile
+      # drift fails in CI instead of at deploy time.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter web lint
+      - run: pnpm --filter web test
+
+      # A placeholder is enough to typecheck and bundle; the real value is injected by
+      # Vercel at build time and is not a secret (it is a public API origin).
+      - name: Build
+        run: pnpm --filter web build
+        env:
+          NEXT_PUBLIC_API_URL: https://example.invalid
