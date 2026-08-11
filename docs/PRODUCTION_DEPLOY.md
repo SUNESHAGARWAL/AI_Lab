@@ -32,6 +32,7 @@ root**, not `apps/api` — the Dockerfile is a uv workspace build and needs the 
 | `DEEPSEEK_API_KEY` | yes | your DeepSeek key |
 | `GROQ_API_KEY` | yes | your Groq key |
 | `FRONTEND_ORIGIN` | yes | your Vercel domain, e.g. `https://your-app.vercel.app` (comma-separate if you also want to allow a preview domain) |
+| `PORT` | yes | `8000`. Railway's healthcheck probes the port named by `PORT` and reports `service unavailable` against anything else — without it every probe fails and the deploy never goes live even though the app is serving correctly. Railway injects only `RAILWAY_*` vars, never `PORT`, so it must be set by hand; the Dockerfile binds `${PORT:-8000}` to match. |
 | `APP_ENV` | recommended | `production` |
 | `MAX_QUERY_LENGTH` | optional | defaults to `2000` |
 | `LIVE_QUERY_RATE_LIMIT_PER_HOUR` | optional | defaults to `5` |
