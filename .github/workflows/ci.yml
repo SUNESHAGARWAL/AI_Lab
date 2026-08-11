@@ -59,6 +59,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          # v5 turns this on by default, and it probes for pnpm before the corepack
+          # step below has provided it — "Unable to locate executable file: pnpm".
+          package-manager-cache: false
 
       # corepack reads apps/web's own "packageManager" pin, so CI and Vercel resolve
       # the identical pnpm version without repeating it here.
