@@ -126,10 +126,16 @@ USER appuser
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
 # --loop asyncio, not uvicorn's default uvloop: psycopg_pool's AsyncConnectionPool.open()
 # hangs indefinitely under uvloop specifically (reproduced locally — PoolTimeout after the
 # configured 10s under uvloop, clean success under plain asyncio). Confirmed via direct
 # reproduction outside uvicorn, not a guess.
-CMD ["uvicorn", "api.main:app", "--app-dir", "apps/api/src", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio"]
+#
+# Shell form (not exec form) so ${PORT} expands at runtime. Railway's healthcheck probes
+# the port named by $PORT and reports "service unavailable" against anything else — a
+# hardcoded --port 8000 makes every probe fail even though the app is serving fine
+# (docs.railway.com/guides/healthchecks). Binding $PORT means the app follows whatever
+# the platform assigns; the :-8000 fallback keeps plain `docker run` working unchanged.
+CMD ["sh", "-c", "exec uvicorn api.main:app --app-dir apps/api/src --host 0.0.0.0 --port ${PORT:-8000} --loop asyncio"]
