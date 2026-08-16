@@ -6,6 +6,10 @@ import { motion, useReducedMotion } from "motion/react";
 import { ExampleQuestions } from "./ExampleQuestions";
 import { Footer } from "./Footer";
 import { Hero } from "./Hero";
+import { ScopeNote } from "./ScopeNote";
+
+export const QUERY_PLACEHOLDER =
+  "e.g. What are the transparency obligations for a limited-risk AI system?";
 
 /** The first-impression surface: hero, curated example questions, a manual fallback
  * input, footer. One entrance sequence, gated by reduced-motion the same way every
@@ -46,7 +50,7 @@ export function Landing({ onAsk }: { onAsk: (question: string) => void }) {
           <textarea
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ask a question about the EU AI Act or GDPR…"
+            placeholder={QUERY_PLACEHOLDER}
             rows={3}
             className="border-rule flex-1 border p-2 font-serif"
           />
@@ -58,6 +62,7 @@ export function Landing({ onAsk }: { onAsk: (question: string) => void }) {
             Ask
           </button>
         </form>
+        <ScopeNote />
       </motion.div>
 
       <motion.div variants={item}>

@@ -132,9 +132,7 @@ async def _run(
     gateway: Gateway, thread_id: str, *, max_retries: int = 2, query: str = "what is x?"
 ) -> list[GraphEvent]:
     recorder = RecordingGateway(gateway)
-    graph = build_graph(
-        InMemorySaver(), FakeRetriever(corpus=_corpus()), FakeReranker(), recorder
-    )
+    graph = build_graph(InMemorySaver(), FakeRetriever(corpus=_corpus()), FakeReranker(), recorder)
     config = {"configurable": {"thread_id": thread_id}}
     state = initial_state(query, max_retries=max_retries)
     return [event async for event in stream_graph_events(graph, state, config, recorder)]
@@ -250,3 +248,39 @@ async def test_rate_limited_request_never_builds_the_graph() -> None:
     assert "event: error" in frames[1]
     assert '"reason":"rate_limited"' in frames[1]
     assert '"retryable":true' in frames[1]
+
+
+class _ExplodingRateLimiter:
+    async def check(self, client_key: str) -> RateLimitResult:
+        raise AssertionError("a greeting must not consume a live-query allowance")
+
+
+@pytest.mark.asyncio
+async def test_greeting_short_circuits_before_the_rate_limiter_and_the_graph() -> None:
+    """The scope guard's cost guarantee, asserted structurally: app_state has no
+    checkpointer/retriever/reranker/gateway, so any attempt to build or run the graph
+    raises AttributeError, and the rate limiter raises if consulted. Two clean frames
+    means zero gateway calls and zero allowance spent."""
+    app_state = SimpleNamespace(rate_limiter=_ExplodingRateLimiter())
+    request = StreamQueryRequest(query="hi")
+
+    frames = [frame async for frame in _sse_body(request, app_state, "9.9.9.9")]
+
+    assert len(frames) == 2
+    assert "event: graph_started" in frames[0]
+    assert "event: graph_interrupted" in frames[1]
+    assert '"type":"out_of_scope"' in frames[1]
+
+
+@pytest.mark.asyncio
+async def test_real_question_is_not_short_circuited_by_the_scope_guard() -> None:
+    """The complement of the test above: the same bare app_state must now fail trying to
+    reach the rate limiter, proving a genuine compliance question still takes the full
+    path rather than being answered by the guard."""
+    app_state = SimpleNamespace(rate_limiter=_ExplodingRateLimiter())
+    request = StreamQueryRequest(
+        query="what does the EU AI Act mention on personal information handling"
+    )
+
+    with pytest.raises(AssertionError, match="live-query allowance"):
+        [frame async for frame in _sse_body(request, app_state, "9.9.9.9")]

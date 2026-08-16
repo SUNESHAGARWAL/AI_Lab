@@ -3,17 +3,22 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
-import { AnswerPanel } from "@/components/citations/AnswerPanel";
 import { buildChunkIndex } from "@/lib/citations";
 import { FORWARD_EDGES, NODE_ORDER, RETRY_EDGE, VIEWBOX } from "@/lib/graph-layout";
-import { graphReducer, initialGraphVizState, resolveFanOutIdle, type GraphVizState } from "@/lib/graph-state";
+import {
+  graphReducer,
+  initialGraphVizState,
+  resolveFanOutIdle,
+  selectTerminal,
+  type GraphVizState,
+} from "@/lib/graph-state";
 import type { GraphEvent } from "@/lib/types/graph-events.generated";
 
-import { AbstainPanel } from "./AbstainPanel";
 import { EventLog } from "./EventLog";
 import { ForwardGraphEdge, RetryGraphEdge } from "./GraphEdge";
 import { GraphNode } from "./GraphNode";
 import { RetrievalFanOut } from "./RetrievalFanOut";
+import { TerminalPanel, type WaitPhase } from "./TerminalPanel";
 
 type VizAction = { type: "event"; event: GraphEvent } | { type: "fanout-settled" };
 
@@ -23,17 +28,19 @@ function vizReducer(state: GraphVizState, action: VizAction): GraphVizState {
 
 const RETRY_LABEL_MS = 2600;
 
-const FRIENDLY_ERROR_REASONS = new Set(["rate_limited", "budget_exhausted"]);
-
 interface AgentGraphProps {
   events: GraphEvent[];
-  /** Present only once a query has actually launched (see app/page.tsx) — lets the
-   * friendly rate-limit/budget-exhausted banner send the visitor back to the always-free
-   * example questions instead of just naming the problem. */
+  /** True while a stream is open. Only ever distinguishes "still working" from "ended
+   * with nothing" in the terminal panel — it can't suppress a result that arrived. */
+  isStreaming: boolean;
+  waitPhase: WaitPhase;
+  /** Present only once a query has actually launched (see app/page.tsx) — lets every
+   * dead-end terminal state send the visitor back to the always-free example questions
+   * instead of just naming the problem. */
   onBackToExamples?: () => void;
 }
 
-export function AgentGraph({ events, onBackToExamples }: AgentGraphProps) {
+export function AgentGraph({ events, isStreaming, waitPhase, onBackToExamples }: AgentGraphProps) {
   const [state, dispatch] = useReducer(vizReducer, undefined, initialGraphVizState);
   const appliedCount = useRef(0);
   const reduceMotion = useReducedMotion() ?? false;
@@ -62,12 +69,12 @@ export function AgentGraph({ events, onBackToExamples }: AgentGraphProps) {
 
   const handleFanOutCollapsed = useCallback(() => dispatch({ type: "fanout-settled" }), []);
 
-  const abstained = state.nodes.hitl_gate.status === "abstain";
   const rerankerPayload = state.nodes.reranker.payload;
   const chunksById = useMemo(
     () => buildChunkIndex(rerankerPayload?.reranked as unknown[] | undefined),
     [rerankerPayload],
   );
+  const terminal = useMemo(() => selectTerminal(state, isStreaming), [state, isStreaming]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -113,29 +120,14 @@ export function AgentGraph({ events, onBackToExamples }: AgentGraphProps) {
         ))}
       </div>
 
-      <AbstainPanel interrupt={abstained ? state.interrupt : null} reduceMotion={reduceMotion} />
-
-      <AnswerPanel completed={state.completed} chunksById={chunksById} reduceMotion={reduceMotion} />
-
-      {state.error &&
-        (FRIENDLY_ERROR_REASONS.has(state.error.reason ?? "") ? (
-          <div className="border-citation bg-citation/5 border-l-4 px-5 py-4">
-            <p className="font-serif text-sm leading-relaxed text-ink">{state.error.message}</p>
-            {onBackToExamples && (
-              <button
-                type="button"
-                onClick={onBackToExamples}
-                className="text-citation mt-2 font-mono text-xs underline underline-offset-2"
-              >
-                back to the example questions
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="border-ink text-ink border border-dashed px-4 py-3 font-mono text-xs">
-            graph error{state.error.retryable ? " (retryable)" : ""}: {state.error.message}
-          </div>
-        ))}
+      <TerminalPanel
+        terminal={terminal}
+        chunksById={chunksById}
+        reduceMotion={reduceMotion}
+        waitPhase={waitPhase}
+        onBackToExamples={onBackToExamples}
+        onShowRawEvents={() => setShowLog(true)}
+      />
 
       {showLog && <EventLog events={events} />}
     </div>

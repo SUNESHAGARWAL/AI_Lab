@@ -18,7 +18,8 @@ from starlette.responses import StreamingResponse
 
 from api.config import get_settings
 from api.graph.build import build_graph
-from api.graph.events import GraphErrorEvent, GraphStartedEvent
+from api.graph.events import GraphErrorEvent, GraphInterruptedEvent, GraphStartedEvent
+from api.graph.scope_guard import out_of_scope_interrupt, scope_guard_reason
 from api.graph.state import initial_state
 from api.graph.streaming import RecordingGateway, new_thread_id, stream_graph_events
 from llm import Gateway
@@ -47,6 +48,25 @@ async def _sse_body(
     request: StreamQueryRequest, app_state: State, client_key: str
 ) -> AsyncIterator[str]:
     thread_id = request.thread_id or new_thread_id()
+
+    # Greetings and "what can you do" resolve here, before the rate limiter and before
+    # any graph build — deterministic, zero gateway calls, and it doesn't burn one of the
+    # visitor's few live queries on an input that was never going to reach the corpus.
+    # See api.graph.scope_guard for why this can't swallow a real question.
+    guard_reason = scope_guard_reason(request.query)
+    if guard_reason is not None:
+        yield _format_sse(
+            0, GraphStartedEvent(thread_id=thread_id, emitted_at=time.time(), query=request.query)
+        )
+        yield _format_sse(
+            1,
+            GraphInterruptedEvent(
+                thread_id=thread_id,
+                emitted_at=time.time(),
+                interrupt=out_of_scope_interrupt(guard_reason),
+            ),
+        )
+        return
 
     # Rate-limit before doing any work at all — no graph build, no gateway call, not
     # even a thread checkpoint. Cached example replays never hit this route (see

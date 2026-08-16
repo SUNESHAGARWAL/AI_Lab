@@ -174,6 +174,96 @@ export function graphReducer(state: GraphVizState, event: GraphEvent): GraphVizS
   }
 }
 
+/** The one thing a finished (or still-running) query resolves to on screen. Exhaustive
+ * by construction: `selectTerminal` returns exactly one of these for *any* GraphVizState,
+ * including states no backend should ever produce. That total-ness is the never-blank
+ * guarantee — the bug this replaced was three components each independently deciding not
+ * to render, with a real cited answer sitting unread in `interrupt`. */
+export type Terminal =
+  | { kind: "answer"; answer: string; citations: string[]; confidence: number | null }
+  | { kind: "review"; answer: string; citations: string[]; confidence: number | null }
+  | { kind: "abstain"; reason: string }
+  | { kind: "out_of_scope"; reason: string | null }
+  | { kind: "error"; message: string; retryable: boolean; friendly: boolean }
+  | { kind: "streaming" }
+  | { kind: "no_terminal" };
+
+/** `reason` on GraphErrorEvent, for the two cases that are a budget fact about the demo
+ * rather than a fault — they get visitor-facing framing, not a raw error box. */
+const FRIENDLY_ERROR_REASONS = new Set(["rate_limited", "budget_exhausted"]);
+
+function str(value: unknown): string | null {
+  return typeof value === "string" && value.trim() !== "" ? value : null;
+}
+
+function strList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+}
+
+function num(value: unknown): number | null {
+  return typeof value === "number" ? value : null;
+}
+
+const NO_SUPPORT = "The available sources didn't support a confident answer.";
+
+/** GraphInterruptedEvent.interrupt -> Terminal. The `review` framing is the one the
+ * production stream actually sends for a below-threshold answer (see
+ * api.graph.nodes.make_hitl_gate_node): it carries the full draft and its citations, and
+ * no `graph_completed` ever follows it, so this is the *only* place that answer exists. */
+function terminalFromInterrupt(interrupt: Record<string, unknown>): Terminal {
+  if (interrupt.type === "out_of_scope") {
+    return { kind: "out_of_scope", reason: str(interrupt.reason) };
+  }
+
+  if (interrupt.abstained === true) {
+    return { kind: "abstain", reason: str(interrupt.abstain_reason) ?? NO_SUPPORT };
+  }
+
+  const answer = str(interrupt.answer);
+  // A draft with no text is not an answer, whatever the abstained flag says — degrade
+  // rather than render an empty box.
+  if (!answer) return { kind: "abstain", reason: str(interrupt.abstain_reason) ?? NO_SUPPORT };
+
+  return {
+    kind: "review",
+    answer,
+    citations: strList(interrupt.citations),
+    confidence: num(interrupt.confidence),
+  };
+}
+
+/** Collapses a whole run into the single panel to show. Total function: every branch
+ * returns, and the fallthrough is `no_terminal` (a visible "the run ended without a final
+ * response" state), never null. `isStreaming` only decides between "still working" and
+ * "ended with nothing" — it can never suppress a real result. */
+export function selectTerminal(state: GraphVizState, isStreaming: boolean): Terminal {
+  if (state.error) {
+    return {
+      kind: "error",
+      message: state.error.message,
+      retryable: state.error.retryable,
+      friendly: FRIENDLY_ERROR_REASONS.has(state.error.reason ?? ""),
+    };
+  }
+
+  if (state.interrupt) return terminalFromInterrupt(state.interrupt);
+
+  if (state.completed) {
+    const answer = str(state.completed.answer);
+    if (state.completed.abstained || !answer) {
+      return { kind: "abstain", reason: NO_SUPPORT };
+    }
+    return {
+      kind: "answer",
+      answer,
+      citations: state.completed.citations,
+      confidence: state.completed.confidence,
+    };
+  }
+
+  return isStreaming ? { kind: "streaming" } : { kind: "no_terminal" };
+}
+
 export function resolveFanOutIdle(state: GraphVizState): GraphVizState {
   if (state.fanOut.phase === "idle") return state;
   return { ...state, fanOut: { ...state.fanOut, phase: "idle" } };
