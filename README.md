@@ -8,6 +8,11 @@ API: [`/health`](https://web-production-ab6a1.up.railway.app/health)
 
 Runs end to end on free tiers. Total infrastructure cost: **$0**.
 
+> **Evaluating me for a project?** The short version is in
+> [docs/case-study.md](docs/case-study.md) — architecture, the three
+> decisions with the numbers behind them, what it costs to run, and what it can't do. The
+> rest of this README is the design document.
+
 ---
 
 ## Why abstention is the whole point
@@ -137,7 +142,7 @@ system genuinely gets wrong, documented in [Known gaps](#known-gaps-honestly). A
 set that only contains questions the system already answers measures nothing, so the
 lower number is the more useful one.
 
-**About that 0.1667.** It's the one metric that looks broken, and it's the one I'd want
+**About that 0.1676.** It's the one metric that looks broken, and it's the one I'd want
 to be asked about. It's computed as an exact set intersection between the golden set's
 `relevant_chunk_ids` and the chunk ids actually shown to the generator. Because the
 corpus is chunked at *both* article and paragraph grain, the retriever legitimately
@@ -282,7 +287,7 @@ parsing of model output.
 
 ```bash
 just dev           # postgres + redis, then api and web
-just test          # 203 fast deterministic tests
+just test          # 251 fast deterministic tests
 just evals-fast    # layers 1+2, deterministic, free
 just ingest        # rebuild the corpus index
 ```
