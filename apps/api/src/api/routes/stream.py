@@ -141,6 +141,13 @@ async def _sse_body(
                 )
                 yield _format_sse(seq, event)
                 seq += 1
+        except GeneratorExit:
+            # The visitor navigated away mid-stream. Awaiting anything while unwinding
+            # a GeneratorExit raises "async generator ignored GeneratorExit", so the
+            # refund is dropped rather than attempted — and dropping it is right on the
+            # merits too: work was done and tokens may well have been spent.
+            refundable = False
+            raise
         except Exception:
             # Never reached the graph at all (build_graph, checkpointer setup): no
             # tokens were spent, so this is unambiguously refundable. Re-raised for
