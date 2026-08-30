@@ -79,3 +79,62 @@ def test_client_key_falls_back_to_socket_address_without_a_proxy() -> None:
 
 def test_client_key_handles_a_missing_client() -> None:
     assert client_key_for(_request({}, client_host=None)) == "unknown"
+
+
+@pytest.mark.asyncio
+async def test_refund_returns_the_allowance_to_the_same_bucket() -> None:
+    limiter = RateLimiter(FakeAsyncRedis(), _settings(limit=2))
+
+    spent = await limiter.check("1.2.3.4")
+    assert (await limiter.check("1.2.3.4")).allowed is True  # allowance now used up
+
+    await limiter.refund(spent.key)
+
+    # Exactly one slot comes back — not a reset of the window.
+    assert (await limiter.check("1.2.3.4")).allowed is True
+    assert (await limiter.check("1.2.3.4")).allowed is False
+
+
+@pytest.mark.asyncio
+async def test_refund_never_resurrects_an_expired_bucket() -> None:
+    """A bare DECR on a missing key creates it at -1 with no TTL — a key that leaks
+    forever and silently grants the next visitor in that bucket an extra query. The
+    refund must be a no-op when the window has already rolled over."""
+    redis = FakeAsyncRedis()
+    limiter = RateLimiter(redis, _settings(limit=1))
+
+    await limiter.refund("api:ratelimit:1.2.3.4:2020010100")
+
+    assert [k async for k in redis.scan_iter("api:ratelimit:*")] == []
+    assert (await limiter.check("1.2.3.4")).allowed is True
+
+
+@pytest.mark.asyncio
+async def test_repeated_refunds_cannot_drive_the_counter_negative() -> None:
+    """Otherwise a single failing request refunded twice would hand out free queries
+    for the rest of the hour."""
+    redis = FakeAsyncRedis()
+    limiter = RateLimiter(redis, _settings(limit=1))
+
+    spent = await limiter.check("1.2.3.4")
+    for _ in range(5):
+        await limiter.refund(spent.key)
+
+    assert int(await redis.get(spent.key)) == 0
+    assert (await limiter.check("1.2.3.4")).allowed is True
+    assert (await limiter.check("1.2.3.4")).allowed is False
+
+
+@pytest.mark.asyncio
+async def test_refund_is_best_effort_and_never_raises() -> None:
+    """A refund runs while a failure is already being handled — it must not turn a
+    handled error into an unhandled one."""
+
+    class _BrokenRedis(FakeAsyncRedis):
+        async def eval(self, *args: object, **kwargs: object) -> object:
+            raise ConnectionError("Connection closed by server.")
+
+    limiter = RateLimiter(_BrokenRedis(), _settings(limit=1))
+    spent = await limiter.check("1.2.3.4")
+
+    await limiter.refund(spent.key)  # must not raise
