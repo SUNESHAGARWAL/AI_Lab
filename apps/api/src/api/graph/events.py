@@ -121,9 +121,13 @@ class GraphCompletedEvent(BaseModel):
 
 class GraphErrorEvent(BaseModel):
     """A gateway failure (AllProvidersExhausted/BudgetExceeded) propagated out of a
-    node mid-stream, or a pre-graph rejection (rate limit) emitted before any node
-    runs. SSE can't change the HTTP status after headers are sent, so this is the
-    in-band equivalent of the non-streaming path's 503/429.
+    node mid-stream, a pre-graph rejection (rate limit) emitted before any node runs,
+    or any other fault anywhere in the request ("internal_error" — a dropped database
+    connection, an unreachable Redis). SSE can't change the HTTP status after headers
+    are sent, so this is the in-band equivalent of the non-streaming path's 503/429,
+    and it is the *only* way a fault can be reported once streaming has begun: without
+    one of these the response just stops, which is indistinguishable from success to
+    everything downstream.
 
     `reason` is a structured discriminator for the frontend to branch on directly
     instead of pattern-matching `message` text — `None` for the original
@@ -138,7 +142,14 @@ class GraphErrorEvent(BaseModel):
     message: str
     retryable: bool
     reason: (
-        Literal["rate_limited", "budget_exhausted", "provider_exhausted", "input_too_long"] | None
+        Literal[
+            "rate_limited",
+            "budget_exhausted",
+            "provider_exhausted",
+            "input_too_long",
+            "internal_error",
+        ]
+        | None
     ) = None
 
 

@@ -36,6 +36,9 @@ from api.graph.events import (
 )
 from api.graph.state import AgentState
 from llm import AllProvidersExhausted, BudgetExceeded, CompletionRequest, CompletionResult, Gateway
+from telemetry import get_logger
+
+logger = get_logger(__name__)
 
 
 class RecordingGateway:
@@ -141,7 +144,16 @@ async def stream_graph_events(
                 "questions, they're always free."
             )
             reason = "budget_exhausted"
+        elif isinstance(exc, AllProvidersExhausted):
+            # Named explicitly rather than left as None. Every provider in the chain
+            # refusing is our infrastructure failing, not the visitor's query being
+            # unreasonable, and the route has to tell the two apart to decide whether
+            # to refund the live-query allowance (api.routes.stream). Leaving both as
+            # None made a discriminator that did not discriminate.
+            message = str(exc)
+            reason = "provider_exhausted"
         else:
+            # A per-request budget ceiling: this particular query was too expensive.
             message = str(exc)
             reason = None
         yield GraphErrorEvent(
@@ -150,6 +162,30 @@ async def stream_graph_events(
             message=message,
             retryable=isinstance(exc, AllProvidersExhausted),
             reason=reason,
+        )
+        return
+    except Exception:
+        # Anything else — a dropped Postgres connection on the checkpoint write, a
+        # retriever fault, a bug in a node. Without this the exception escapes the
+        # async generator and StreamingResponse simply stops sending: the client sees
+        # a 200 that ends after `graph_started`, with no terminal event and nothing in
+        # the payload to explain it. That is a silent outage, and it is exactly how the
+        # dead-checkpointer-connection bug hid (see api.graph.checkpointer). Every exit
+        # from this generator now carries a terminal event.
+        #
+        # exc_info, not the message text: the exception can carry a connection string
+        # or prompt fragment, and CLAUDE.md keeps those out of the response body. The
+        # visitor gets a generic retryable error; the detail goes to the logs.
+        logger.exception("stream.graph_failed", thread_id=thread_id)
+        yield GraphErrorEvent(
+            thread_id=thread_id,
+            emitted_at=time.time(),
+            message=(
+                "Something broke on our side partway through answering. "
+                "Try again, or use one of the example questions — those always work."
+            ),
+            retryable=True,
+            reason="internal_error",
         )
         return
 

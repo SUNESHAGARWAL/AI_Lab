@@ -23,8 +23,27 @@ from api.graph.scope_guard import out_of_scope_interrupt, scope_guard_reason
 from api.graph.state import initial_state
 from api.graph.streaming import RecordingGateway, new_thread_id, stream_graph_events
 from llm import Gateway
+from telemetry import get_logger
+
+# Which failures give the visitor their live-query allowance back.
+#
+#   internal_error     — our fault entirely (dead DB connection, unreachable Redis).
+#   provider_exhausted — every provider in the chain refused; nothing we can bill them for.
+#
+# and, deliberately, which do not:
+#
+#   budget_exhausted   — the day's hard cost ceiling. Refunding it would make the one
+#                        limit that actually caps spend infinitely retryable.
+#   rate_limited       — refunding the limit's own rejection uncaps the limit.
+#   None               — a per-request budget overrun: this particular query was too
+#                        expensive, which is about the query, not about us.
+#
+# A delivered answer and an abstention both cost real tokens and are both the system
+# working as designed, so neither is refundable — abstention is the product, not a miss.
+_REFUNDABLE_ERROR_REASONS = frozenset({"internal_error", "provider_exhausted"})
 
 router = APIRouter()
+logger = get_logger(__name__)
 _tracer = trace.get_tracer(__name__)
 _settings = get_settings()  # module-level, same eager-fail-loudly pattern as api.main
 
@@ -47,6 +66,12 @@ def _format_sse(seq: int, event: BaseModel) -> str:
 async def _sse_body(
     request: StreamQueryRequest, app_state: State, client_key: str
 ) -> AsyncIterator[str]:
+    """Formats one query's run as SSE frames.
+
+    Wrapped by _guarded_sse_body — never hand this to StreamingResponse directly, or an
+    exception raised out here (Redis down in the rate limiter, a graph that fails to
+    build) closes the response with a bare 200 and no terminal frame at all.
+    """
     thread_id = request.thread_id or new_thread_id()
 
     # Greetings and "what can you do" resolve here, before the rate limiter and before
@@ -105,9 +130,26 @@ async def _sse_body(
     with _tracer.start_as_current_span("api.stream_query") as span:
         span.set_attribute("thread_id", thread_id)
         seq = 0
-        async for event in stream_graph_events(graph, state, config, recorder):
-            yield _format_sse(seq, event)
-            seq += 1
+        refundable = False
+        try:
+            async for event in stream_graph_events(graph, state, config, recorder):
+                # stream_graph_events converts in-graph faults into error events rather
+                # than raising, so the terminal event — not an exception — is what says
+                # whether this run was our fault.
+                refundable = (
+                    isinstance(event, GraphErrorEvent) and event.reason in _REFUNDABLE_ERROR_REASONS
+                )
+                yield _format_sse(seq, event)
+                seq += 1
+        except Exception:
+            # Never reached the graph at all (build_graph, checkpointer setup): no
+            # tokens were spent, so this is unambiguously refundable. Re-raised for
+            # _guarded_sse_body to turn into the terminal frame.
+            refundable = True
+            raise
+        finally:
+            if refundable:
+                await app_state.rate_limiter.refund(limit_result.key)
 
 
 def client_key_for(request: Request) -> str:
@@ -129,9 +171,51 @@ def client_key_for(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+async def _guarded_sse_body(
+    request: StreamQueryRequest, app_state: State, client_key: str
+) -> AsyncIterator[str]:
+    """Guarantees the response always ends on a terminal frame.
+
+    api.graph.streaming.stream_graph_events already converts a failure *inside* the
+    graph run into an error event, but it can only catch what happens once it is
+    running. Everything _sse_body does around it — the rate-limiter's Redis round trip,
+    build_graph, the scope guard — sits outside that generator, and an exception there
+    used to escape into StreamingResponse, which has no way to signal a fault after the
+    200 is on the wire: it just stops writing. The client sees a well-formed empty (or
+    truncated) stream and can only guess at the cause, which is precisely how an
+    infrastructure outage came to look like a frontend bug.
+
+    So: one belt-and-braces wrapper, tracking `seq` so the error frame continues the
+    stream's numbering rather than colliding with a frame already sent.
+    """
+    seq = 0
+    try:
+        async for frame in _sse_body(request, app_state, client_key):
+            seq += 1
+            yield frame
+    except Exception:
+        # Detail to the logs, never to the visitor — the exception text can carry a
+        # connection string, and CLAUDE.md keeps credentials out of response bodies.
+        logger.exception("stream.request_failed", client_key=client_key)
+        yield _format_sse(
+            seq,
+            GraphErrorEvent(
+                thread_id=request.thread_id or "unknown",
+                emitted_at=time.time(),
+                message=(
+                    "Something broke on our side before we could answer. "
+                    "Try again, or use one of the example questions — those always work."
+                ),
+                retryable=True,
+                reason="internal_error",
+            ),
+        )
+
+
 @router.post("/query/stream")
 async def stream_query(payload: StreamQueryRequest, request: Request) -> StreamingResponse:
     client_key = client_key_for(request)
     return StreamingResponse(
-        _sse_body(payload, request.app.state, client_key), media_type="text/event-stream"
+        _guarded_sse_body(payload, request.app.state, client_key),
+        media_type="text/event-stream",
     )

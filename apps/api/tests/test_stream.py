@@ -2,13 +2,15 @@ import json
 from types import SimpleNamespace
 from typing import Any
 
+import psycopg
 import pytest
+from api.config import Settings
 from api.graph.build import build_graph
 from api.graph.events import GraphEvent, NodeName
 from api.graph.state import initial_state
 from api.graph.streaming import RecordingGateway, stream_graph_events
-from api.ratelimit import RateLimitResult
-from api.routes.stream import StreamQueryRequest, _sse_body
+from api.ratelimit import RateLimiter, RateLimitResult
+from api.routes.stream import StreamQueryRequest, _guarded_sse_body, _sse_body
 from core.models import Chunk
 from core.testing import FakeReranker, FakeRetriever
 from fakeredis import FakeAsyncRedis
@@ -210,7 +212,7 @@ async def test_gateway_exhaustion_emits_error_event_and_terminates_cleanly() -> 
 
     assert events[-1].type == "error"
     assert events[-1].retryable is True
-    assert events[-1].reason is None
+    assert events[-1].reason == "provider_exhausted"
     assert not any(e.type in ("graph_completed", "graph_interrupted") for e in events)
 
 
@@ -284,3 +286,127 @@ async def test_real_question_is_not_short_circuited_by_the_scope_guard() -> None
 
     with pytest.raises(AssertionError, match="live-query allowance"):
         [frame async for frame in _sse_body(request, app_state, "9.9.9.9")]
+
+
+class _DeadConnectionSaver(InMemorySaver):
+    """A checkpointer whose very first write fails the way a severed Postgres
+    connection does — the exact production fault this guards against: Neon suspended
+    its free-tier compute, the checkpointer's single long-lived connection died with
+    it, and `aput` raised before the planner was ever scheduled."""
+
+    async def aput(self, *args: Any, **kwargs: Any) -> Any:
+        raise psycopg.OperationalError("consuming input failed: server closed the connection")
+
+
+@pytest.mark.asyncio
+async def test_unexpected_infrastructure_failure_still_emits_a_terminal_event() -> None:
+    """The stream must never just stop. Before this, any exception other than
+    AllProvidersExhausted/BudgetExceeded escaped the async generator and
+    StreamingResponse simply closed: the client got a 200 that ended after
+    `graph_started` with no terminal event, and the frontend could only guess. A
+    dropped checkpointer connection therefore looked like a frontend bug for as long
+    as it took someone to redeploy."""
+    recorder = RecordingGateway(_review_gateway())
+    graph = build_graph(
+        _DeadConnectionSaver(), FakeRetriever(corpus=_corpus()), FakeReranker(), recorder
+    )
+    config = {"configurable": {"thread_id": "stream-dead-conn"}}
+    state = initial_state("what is x?", max_retries=1)
+
+    events = [event async for event in stream_graph_events(graph, state, config, recorder)]
+
+    assert events[0].type == "graph_started"
+    assert events[-1].type == "error"
+    assert events[-1].reason == "internal_error"
+    assert events[-1].retryable is True
+    # The visitor-facing message must not leak the driver's exception text.
+    assert "server closed the connection" not in events[-1].message
+    assert not any(e.type in ("graph_completed", "graph_interrupted") for e in events)
+
+
+class _BrokenRateLimiter:
+    """Redis unreachable — what a misconfigured or down Upstash actually looks like
+    from inside the rate limiter."""
+
+    async def check(self, client_key: str) -> RateLimitResult:
+        raise ConnectionError("Connection closed by server.")
+
+
+@pytest.mark.asyncio
+async def test_failure_outside_the_graph_still_emits_a_terminal_frame() -> None:
+    """The companion to the test above, for the other side of the boundary. A fault in
+    the rate limiter happens before stream_graph_events is ever entered, so its internal
+    handler cannot see it; unguarded, the request completed with a 200 and a completely
+    empty body. _guarded_sse_body is what turns that into a terminal error frame."""
+    app_state = SimpleNamespace(rate_limiter=_BrokenRateLimiter())
+    request = StreamQueryRequest(query="what is x?")
+
+    frames = [frame async for frame in _guarded_sse_body(request, app_state, "9.9.9.9")]
+
+    assert len(frames) == 1
+    assert "event: error" in frames[0]
+    assert '"reason":"internal_error"' in frames[0]
+    assert '"retryable":true' in frames[0]
+    # The driver's exception text must not reach the visitor.
+    assert "Connection closed by server" not in frames[0]
+
+
+def _refund_app_state(gateway: Gateway, redis: FakeAsyncRedis, limit: int = 5) -> SimpleNamespace:
+    settings = Settings(
+        database_url="postgresql://x", redis_url="redis://x", live_query_rate_limit_per_hour=limit
+    )
+    return SimpleNamespace(
+        rate_limiter=RateLimiter(redis, settings),
+        checkpointer=InMemorySaver(),
+        retriever=FakeRetriever(corpus=_corpus()),
+        reranker=FakeReranker(),
+        gateway=gateway,
+    )
+
+
+async def _spend_one(app_state: SimpleNamespace, gateway_query: str = "what is x?") -> None:
+    request = StreamQueryRequest(query=gateway_query, max_retries=1)
+    async for _frame in _guarded_sse_body(request, app_state, "5.5.5.5"):
+        pass
+
+
+async def _consumed(redis: FakeAsyncRedis) -> int:
+    keys = [k async for k in redis.scan_iter("api:ratelimit:*")]
+    return int(await redis.get(keys[0])) if keys else 0
+
+
+@pytest.mark.asyncio
+async def test_our_own_failure_does_not_cost_the_visitor_an_allowance() -> None:
+    """The outage made this concrete: with the backend broken, a visitor could burn
+    every live query they had on requests that never returned an answer. A run that
+    fails through no fault of theirs has to give the allowance back."""
+    redis = FakeAsyncRedis()
+    app_state = _refund_app_state(_exhausted_gateway(), redis)
+
+    await _spend_one(app_state)
+
+    assert await _consumed(redis) == 0
+
+
+@pytest.mark.asyncio
+async def test_a_delivered_answer_still_costs_an_allowance() -> None:
+    """The other half of the policy — refunding real work would make the limit
+    meaningless. An abstention counts as real work too: it is the product."""
+    redis = FakeAsyncRedis()
+    app_state = _refund_app_state(_review_gateway(), redis)
+
+    await _spend_one(app_state)
+
+    assert await _consumed(redis) == 1
+
+
+@pytest.mark.asyncio
+async def test_the_daily_cost_ceiling_is_never_refunded() -> None:
+    """budget_exhausted is the one limit that actually caps spend. Refunding it would
+    make it infinitely retryable, which defeats the entire point of having it."""
+    redis = FakeAsyncRedis()
+    app_state = _refund_app_state(_budget_exhausted_gateway(), redis)
+
+    await _spend_one(app_state)
+
+    assert await _consumed(redis) == 1

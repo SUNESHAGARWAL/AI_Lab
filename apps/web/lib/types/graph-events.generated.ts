@@ -62,7 +62,8 @@ export type ThreadId6 = string;
 export type EmittedAt6 = number;
 export type Message = string;
 export type Retryable = boolean;
-export type Reason1 = ("rate_limited" | "budget_exhausted" | "provider_exhausted" | "input_too_long") | null;
+export type Reason1 =
+  ("rate_limited" | "budget_exhausted" | "provider_exhausted" | "input_too_long" | "internal_error") | null;
 
 export interface GraphStartedEvent {
   type: Type;
@@ -156,9 +157,13 @@ export interface GraphCompletedEvent {
 }
 /**
  * A gateway failure (AllProvidersExhausted/BudgetExceeded) propagated out of a
- * node mid-stream, or a pre-graph rejection (rate limit) emitted before any node
- * runs. SSE can't change the HTTP status after headers are sent, so this is the
- * in-band equivalent of the non-streaming path's 503/429.
+ * node mid-stream, a pre-graph rejection (rate limit) emitted before any node runs,
+ * or any other fault anywhere in the request ("internal_error" — a dropped database
+ * connection, an unreachable Redis). SSE can't change the HTTP status after headers
+ * are sent, so this is the in-band equivalent of the non-streaming path's 503/429,
+ * and it is the *only* way a fault can be reported once streaming has begun: without
+ * one of these the response just stops, which is indistinguishable from success to
+ * everything downstream.
  *
  * `reason` is a structured discriminator for the frontend to branch on directly
  * instead of pattern-matching `message` text — `None` for the original
