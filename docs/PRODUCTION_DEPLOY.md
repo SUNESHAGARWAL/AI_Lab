@@ -47,6 +47,10 @@ optional — every field there already has a production-reasonable default.
 curl https://<railway-domain>/health
 # {"status":"ok","env":"production"}
 
+curl https://<railway-domain>/ready
+# {"status":"ok","checks":{"postgres":"ok","redis":"ok"}}
+# 503 + {"status":"degraded",...} names whichever dependency is unreachable.
+
 curl -X POST https://<railway-domain>/query/stream \
   -H "Content-Type: application/json" \
   -d '{"query":"What is a data protection impact assessment under GDPR?"}'
@@ -56,6 +60,15 @@ curl -X POST https://<railway-domain>/query/stream \
 Check Railway's deploy logs for a clean `api.startup` log line and no missing-config
 crash (the app fails loudly at import time if `DATABASE_URL`/`REDIS_URL` are missing —
 you'll see it immediately in the logs, not as a mysterious later failure).
+
+**`/health` vs `/ready`.** `/health` is liveness — is the process serving? — and
+deliberately touches no dependency, because Railway restarts the container ON_FAILURE
+against it and a suspended Neon compute would otherwise trigger a restart loop over a
+database that is merely asleep. `/ready` is the one that answers "can this instance
+actually serve a query", and it is the endpoint to check when the frontend reports
+errors but `/health` looks fine. That combination — `/health` green while every single
+query failed — is exactly what made a dead backend look like a frontend bug once, when
+the checkpointer was holding a Postgres connection Neon had already severed.
 
 ---
 
