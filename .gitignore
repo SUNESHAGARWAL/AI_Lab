@@ -48,3 +48,10 @@ apps/ingest/.cache/
 
 ### Evals ###
 evals/reports/
+
+### Go-to-market material — deliberately not published ###
+# Rate ladder, proposal templates and positioning strategy. This is a public repo;
+# a prospective client reading my pricing floor and the template their proposal came
+# from is a live negotiating disadvantage. The engineering case study it renders lives
+# in the public tree at docs/case-study.md — only the business scaffolding is hidden.
+docs/upwork/
