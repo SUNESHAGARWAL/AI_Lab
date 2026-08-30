@@ -410,3 +410,20 @@ async def test_the_daily_cost_ceiling_is_never_refunded() -> None:
     await _spend_one(app_state)
 
     assert await _consumed(redis) == 1
+
+
+@pytest.mark.asyncio
+async def test_a_visitor_disconnecting_mid_stream_does_not_break_the_refund_path() -> None:
+    """Abandoning the stream raises GeneratorExit at the yield. Awaiting a refund while
+    unwinding that would raise "async generator ignored GeneratorExit" — noise on a
+    path that is already just cleanup."""
+    redis = FakeAsyncRedis()
+    app_state = _refund_app_state(_review_gateway(), redis)
+    request = StreamQueryRequest(query="what is x?", max_retries=1)
+
+    body = _guarded_sse_body(request, app_state, "5.5.5.5")
+    await body.__anext__()  # take the first frame, then walk away
+    await body.aclose()  # must not raise
+
+    # Work had already started, so the allowance stays spent.
+    assert await _consumed(redis) == 1
