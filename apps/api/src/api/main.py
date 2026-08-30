@@ -58,6 +58,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # see api.graph.streaming.RecordingGateway's docstring for why that isolation
         # matters under concurrent SSE requests.
         app.state.checkpointer = checkpointer
+        # Exposed for the /ready probe to test the two dependencies the request path
+        # actually needs — see api.routes.health.ready.
+        app.state.pool = pool
+        app.state.redis_client = redis_client
         app.state.retriever = retriever
         app.state.reranker = reranker
         app.state.gateway = gateway
