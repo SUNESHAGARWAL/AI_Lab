@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from starlette.datastructures import State
 from starlette.responses import StreamingResponse
 
-from api.config import get_settings
+from api.config import Settings, get_settings
 from api.graph.build import build_graph
 from api.graph.events import GraphErrorEvent, GraphInterruptedEvent, GraphStartedEvent
 from api.graph.scope_guard import out_of_scope_interrupt, scope_guard_reason
@@ -159,22 +159,29 @@ async def _sse_body(
                 await app_state.rate_limiter.refund(limit_result.key)
 
 
-def client_key_for(request: Request) -> str:
+def client_key_for(request: Request, settings: Settings) -> str:
     """The rate-limit bucket key for a request.
 
-    request.client.host alone is the connecting socket's address — behind Railway's
-    edge proxy that is the *proxy*, so every visitor on the internet would share one
-    bucket and the demo would lock out globally after N live queries.
+    request.client.host alone is the connecting socket's address — behind a hosting
+    platform's edge proxy that is the *proxy*, so every visitor on the internet would
+    share one bucket and the demo would lock out globally after N live queries.
 
-    X-Real-IP, not X-Forwarded-For: Railway overwrites X-Real-IP with the real client
-    address, while it *appends* to X-Forwarded-For and leaves any client-supplied
-    entries in place — so XFF is attacker-controlled and would let a caller rotate
-    spoofed values to skip the limit entirely. Falls back to the socket address for
-    local/dev traffic, where nothing sits in front of uvicorn.
+    So the address comes from settings.client_ip_header. A proxy that *appends* to a
+    header (Cloud Run with X-Forwarded-For) leaves client-supplied entries in place on
+    the left, so only the entry trusted_proxy_hops from the right is real — reading
+    any other would let a caller rotate spoofed values to skip the limit entirely.
+    Falls back to the socket address for local/dev traffic, where nothing sits in
+    front of uvicorn, and when the header is shorter than the proxy chain it claims.
     """
-    real_ip = request.headers.get("x-real-ip", "").strip()
-    if real_ip:
-        return real_ip
+    raw = request.headers.get(settings.client_ip_header, "")
+    if settings.trusted_proxy_hops == 0:
+        candidate = raw.strip()
+    else:
+        entries = [e.strip() for e in raw.split(",")] if raw else []
+        hops = settings.trusted_proxy_hops
+        candidate = entries[-hops] if len(entries) >= hops else ""
+    if candidate:
+        return candidate
     return request.client.host if request.client else "unknown"
 
 
@@ -221,7 +228,7 @@ async def _guarded_sse_body(
 
 @router.post("/query/stream")
 async def stream_query(payload: StreamQueryRequest, request: Request) -> StreamingResponse:
-    client_key = client_key_for(request)
+    client_key = client_key_for(request, _settings)
     return StreamingResponse(
         _guarded_sse_body(payload, request.app.state, client_key),
         media_type="text/event-stream",

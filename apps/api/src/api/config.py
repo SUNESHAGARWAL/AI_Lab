@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,6 +27,19 @@ class Settings(BaseSettings):
     # see api.ratelimit's module docstring. Deliberately conservative for a portfolio
     # demo running on my own API keys; tune via env var, no redeploy needed.
     live_query_rate_limit_per_hour: int = 5
+
+    # Where the rate limiter reads the visitor's address from. The socket address is the
+    # platform's edge proxy, so a header is the only source — but which header is safe
+    # depends entirely on what the proxy in front does with it:
+    #   - trusted_proxy_hops = 0: use the header's value as-is. Only safe when the proxy
+    #     *overwrites* it (e.g. X-Real-IP behind a proxy that sets it).
+    #   - trusted_proxy_hops = N: the header is a comma-separated list the proxy
+    #     *appends* to (X-Forwarded-For); take the Nth entry from the right. Everything
+    #     further left is client-supplied and spoofable. Cloud Run: x-forwarded-for.
+    # uvicorn's ProxyHeadersMiddleware can't do this — it needs the proxies' IPs, and
+    # Google's front ends aren't a fixed published set.
+    client_ip_header: str = "x-real-ip"
+    trusted_proxy_hops: int = Field(default=0, ge=0)
 
     # Comma-separated origins CORSMiddleware allows — never a wildcard in production.
     # Defaults to the local frontend dev server so `just dev` needs no .env entry;
