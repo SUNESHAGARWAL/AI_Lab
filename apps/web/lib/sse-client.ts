@@ -7,7 +7,7 @@ export interface StreamQueryRequest {
   max_retries?: number | null;
 }
 
-/** The backend's own origin — set in Vercel to the deployed Railway domain, defaults to
+/** The backend's own origin — set in Vercel to the Cloud Run service URL, defaults to
  * the local dev API for `next dev`. No dev-only rewrite/proxy: this is the one code path
  * for both environments, matched by CORSMiddleware in apps/api/src/api/main.py reading
  * FRONTEND_ORIGIN. */
