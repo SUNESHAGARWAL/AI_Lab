@@ -258,7 +258,7 @@ Cost discipline as a design constraint, not a postscript:
 - **The production image went from 8.75 GB to 2.58 GB** after switching to CPU-only torch. The
   default wheel drags in several GB of CUDA libraries that a `device="cpu"` deployment never
   loads.
-- Deployed on Railway (API), Vercel (web), Neon (Postgres + pgvector), Upstash (Redis).
+- Deployed on Google Cloud Run (API), Vercel (web), Neon (Postgres + pgvector), Upstash (Redis).
 
 ---
 

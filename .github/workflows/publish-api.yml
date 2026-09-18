@@ -1,0 +1,55 @@
+name: publish-api
+
+# Builds the API image and pushes it to GHCR, from which Cloud Run pulls it. Deploying is
+# a separate, manual `gcloud run deploy` (docs/PRODUCTION_DEPLOY.md) — wiring Actions to
+# GCP needs Workload Identity Federation, not worth it for a demo deployed a few times.
+#
+# The package is public on purpose: Cloud Run pulls public GHCR images directly, which
+# keeps the >1GB image out of Artifact Registry's paid storage. The image holds no
+# secrets — every credential arrives as an env var at deploy time.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/api/**
+      - packages/core/**
+      - packages/llm/**
+      - packages/retrieval/**
+      - packages/telemetry/**
+      - uv.lock
+      - pyproject.toml
+      - .github/workflows/publish-api.yml
+  workflow_dispatch:
+
+concurrency:
+  group: publish-api
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v4
+
+      # Git context (the action's default): BuildKit fetches this commit itself and
+      # applies .dockerignore, so no checkout step is needed. No layer cache: the
+      # dependency layer is several GB before the Dockerfile strips CUDA, which would
+      # blow through the 10GB Actions cache for a build that runs a few times a month.
+      - uses: docker/build-push-action@v7
+        with:
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/suneshagarwal/ai-lab-api:${{ github.sha }}
+            ghcr.io/suneshagarwal/ai-lab-api:latest
