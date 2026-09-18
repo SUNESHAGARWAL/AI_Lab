@@ -3,8 +3,7 @@
 # Build from the REPO ROOT, not apps/api — this is a uv workspace (root pyproject.toml +
 # uv.lock, apps/api/pyproject.toml declares core/llm/retrieval/telemetry as
 # `{ workspace = true }` path dependencies), so the build context needs the sibling
-# workspace packages. Railway: set the service's build context/root directory to the repo
-# root and dockerfilePath to apps/api/Dockerfile (see railway.json at the repo root).
+# workspace packages. CI builds it exactly this way (.github/workflows/publish-api.yml).
 #
 # docker build -f apps/api/Dockerfile .
 
@@ -23,15 +22,8 @@ WORKDIR /app
 # Deps-only layer, cached independently of source changes — see
 # docs.astral.sh/uv/guides/integration/docker/. --no-install-workspace skips the (not yet
 # present) workspace member source itself, just resolves third-party dependencies.
-#
-# Cache mount ids below are hardcoded to this Railway service's id (Railway requires the
-# s/<SERVICE_ID>-<name> prefix on every cache mount for its build cache to attach —
-# a build ARG doesn't work, since Railway parses the Dockerfile before args are available).
-# Harmless for local `docker build` — the id is just a cache namespace token there.
-#
-# Railway's builder also rejects --mount=type=bind (only type=cache is supported), unlike
-# plain BuildKit — so the pyproject.toml files are COPYed in directly instead of
-# bind-mounted, ahead of the full source COPY below.
+# The pyproject.toml files are COPYed in ahead of the full source COPY below, so this
+# layer only rebuilds when dependencies change.
 COPY uv.lock pyproject.toml ./
 COPY apps/api/pyproject.toml apps/api/pyproject.toml
 COPY packages/core/pyproject.toml packages/core/pyproject.toml
@@ -39,7 +31,7 @@ COPY packages/llm/pyproject.toml packages/llm/pyproject.toml
 COPY packages/retrieval/pyproject.toml packages/retrieval/pyproject.toml
 COPY packages/telemetry/pyproject.toml packages/telemetry/pyproject.toml
 
-RUN --mount=type=cache,id=s/8f040c6b-c0af-4507-8ba7-24ae203fb052-uv-cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-workspace --package api
 
 # Now the real source — scoped to exactly what apps/api's dependency closure needs
@@ -66,7 +58,7 @@ COPY packages/telemetry packages/telemetry
 # correctly when the installed package still points back at its real source tree —
 # i.e. an editable install. The runtime stage below COPYs packages/* again so that
 # source tree actually exists at runtime, not just during this build.
-RUN --mount=type=cache,id=s/8f040c6b-c0af-4507-8ba7-24ae203fb052-uv-cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
     uv sync --frozen --package api
 
 # packages/retrieval's SentenceTransformerEmbedder runs CPU-only (device="cpu", hardcoded
@@ -79,7 +71,7 @@ RUN --mount=type=cache,id=s/8f040c6b-c0af-4507-8ba7-24ae203fb052-uv-cache,target
 # tried and didn't take effect for this project's multi-platform universal lock, not
 # worth the added resolution complexity for a single deploy-time concern), swaps it for
 # the ~200MB CPU build with zero CUDA deps.
-RUN --mount=type=cache,id=s/8f040c6b-c0af-4507-8ba7-24ae203fb052-uv-cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
     uv pip install --reinstall --python /app/.venv/bin/python torch --index-url https://download.pytorch.org/whl/cpu
 
 # The swap above uninstalls the CUDA torch package's own metadata but — verified by
@@ -133,9 +125,8 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
 # configured 10s under uvloop, clean success under plain asyncio). Confirmed via direct
 # reproduction outside uvicorn, not a guess.
 #
-# Shell form (not exec form) so ${PORT} expands at runtime. Railway's healthcheck probes
-# the port named by $PORT and reports "service unavailable" against anything else — a
-# hardcoded --port 8000 makes every probe fail even though the app is serving fine
-# (docs.railway.com/guides/healthchecks). Binding $PORT means the app follows whatever
-# the platform assigns; the :-8000 fallback keeps plain `docker run` working unchanged.
+# Shell form (not exec form) so ${PORT} expands at runtime. Cloud Run injects PORT
+# (8080) and routes traffic and its startup probe only to that port, so a hardcoded
+# --port 8000 would never pass the probe. The :-8000 fallback keeps plain `docker run`
+# working unchanged.
 CMD ["sh", "-c", "exec uvicorn api.main:app --app-dir apps/api/src --host 0.0.0.0 --port ${PORT:-8000} --loop asyncio"]
