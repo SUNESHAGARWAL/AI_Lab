@@ -23,10 +23,10 @@ _PROBE_TIMEOUT_SECONDS = 8.0
 def health(settings: Annotated[Settings, Depends(get_settings)]) -> dict[str, str]:
     """Liveness only: is the process up and serving? Never touches a dependency.
 
-    Railway probes this with restartPolicyType ON_FAILURE, so making it dependency-aware
-    would turn a routine Neon suspend into a restart loop — the container would be
-    killed for a database that is merely asleep. Use /ready to ask whether the app can
-    actually serve a query.
+    Cloud Run's startup probe hits this, and a failing probe gets the instance killed,
+    so making it dependency-aware would turn a routine Neon suspend into a restart
+    loop — the container would be killed for a database that is merely asleep. Use
+    /ready to ask whether the app can actually serve a query.
     """
     return {"status": "ok", "env": settings.app_env}
 

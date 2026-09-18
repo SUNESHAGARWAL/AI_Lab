@@ -6,9 +6,9 @@ import type { Terminal } from "@/lib/graph-state";
 
 import { AbstainPanel } from "./AbstainPanel";
 
-/** How long the query has been waiting with nothing back yet. Railway's free tier
- * cold-starts, and a cold start can run into the minutes — the visitor has to be able to
- * tell "waking up" from "dead", or they re-click and fire duplicate streams. */
+/** How long the query has been waiting with nothing back yet. The backend scales to
+ * zero on its free tier, and a cold start can take tens of seconds — the visitor has to
+ * be able to tell "waking up" from "dead", or they re-click and fire duplicate streams. */
 export type WaitPhase = "thinking" | "waking" | "still_waking";
 
 const WAIT_COPY: Record<WaitPhase, string> = {

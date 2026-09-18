@@ -3,8 +3,7 @@
 Ask a question in plain language, get an answer where **every claim traces back to a
 specific article or recital** — or an honest "I can't answer that from these sources."
 
-**Live:** [ai-lab-web-ten.vercel.app](https://ai-lab-web-ten.vercel.app) ·
-API: [`/health`](https://web-production-ab6a1.up.railway.app/health)
+**Live:** [ai-lab-web-ten.vercel.app](https://ai-lab-web-ten.vercel.app)
 
 Runs end to end on free tiers. Total infrastructure cost: **$0**.
 
@@ -198,7 +197,9 @@ Cost discipline is a design constraint here, not a postscript.
   The default torch wheel drags in several GB of CUDA libraries that a `device="cpu"`
   deployment never loads.
 
-Deployed on Railway (API), Vercel (web), Neon (Postgres + pgvector), Upstash (Redis).
+Deployed on Google Cloud Run (API, scale-to-zero on the always-free tier), Vercel (web),
+Neon (Postgres + pgvector), Upstash (Redis). The first live query after an idle spell
+pays a cold start of roughly 10–20 s; cached example questions never touch the API.
 
 ---
 

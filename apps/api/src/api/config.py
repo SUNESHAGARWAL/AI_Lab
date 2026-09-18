@@ -11,9 +11,9 @@ class Settings(BaseSettings):
     database_url: str
     redis_url: str
     # Migrations run over this URL instead of database_url when set. Needed against
-    # Neon: database_url is the pooled (PgBouncer transaction-mode) connection Railway
-    # runtime traffic uses, but running Alembic's migration + the pool's own startup
-    # concurrently over a pooled connection crashes uvicorn's ASGI process outright
+    # Neon: database_url is the pooled (PgBouncer transaction-mode) connection that
+    # production runtime traffic uses, but running Alembic's migration + the pool's own
+    # startup concurrently over a pooled connection crashes uvicorn's ASGI process outright
     # (reproduced locally — silent, no traceback, only under uvicorn + pooled, not a
     # bare script and not the direct connection). Point this at Neon's direct
     # connection string in production; falls back to database_url for local dev,
@@ -43,7 +43,7 @@ class Settings(BaseSettings):
 
     # Comma-separated origins CORSMiddleware allows — never a wildcard in production.
     # Defaults to the local frontend dev server so `just dev` needs no .env entry;
-    # production (Railway) MUST set this explicitly to the real Vercel domain(s).
+    # production (Cloud Run) MUST set this explicitly to the real Vercel domain(s).
     frontend_origin: str = "http://localhost:3000"
 
 
