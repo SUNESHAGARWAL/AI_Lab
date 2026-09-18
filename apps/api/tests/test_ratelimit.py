@@ -57,28 +57,69 @@ def _request(headers: dict[str, str], client_host: str | None) -> Request:
     return Request(scope)  # type: ignore[arg-type]
 
 
-def test_client_key_prefers_x_real_ip_over_the_proxy_socket_address() -> None:
-    # Behind Railway the socket address is the edge proxy — keying on it would put
+def _ip_settings(header: str = "x-real-ip", hops: int = 0) -> Settings:
+    return Settings(
+        database_url="postgresql://x",
+        redis_url="redis://x",
+        client_ip_header=header,
+        trusted_proxy_hops=hops,
+    )
+
+
+def test_client_key_prefers_the_configured_header_over_the_proxy_socket_address() -> None:
+    # Behind an edge proxy the socket address is the proxy — keying on it would put
     # every visitor in one shared rate-limit bucket.
     request = _request({"x-real-ip": "203.0.113.7"}, client_host="10.0.0.1")
-    assert client_key_for(request) == "203.0.113.7"
+    assert client_key_for(request, _ip_settings()) == "203.0.113.7"
 
 
-def test_client_key_ignores_spoofable_x_forwarded_for() -> None:
-    # Railway appends to XFF and keeps client-supplied entries, so it must not be
-    # trusted — a caller could otherwise rotate values to skip the limit.
+def test_client_key_ignores_headers_other_than_the_configured_one() -> None:
     request = _request(
         {"x-forwarded-for": "1.2.3.4", "x-real-ip": "203.0.113.7"}, client_host="10.0.0.1"
     )
-    assert client_key_for(request) == "203.0.113.7"
+    assert client_key_for(request, _ip_settings()) == "203.0.113.7"
+
+
+def test_client_key_takes_the_trusted_hop_from_the_right_of_an_appended_header() -> None:
+    # Cloud Run shape: "<client>, <google front end>" — two hops appended by the platform.
+    request = _request({"x-forwarded-for": "203.0.113.7, 35.191.0.1"}, client_host="10.0.0.1")
+    assert client_key_for(request, _ip_settings("x-forwarded-for", hops=2)) == "203.0.113.7"
+
+
+def test_client_key_ignores_client_supplied_leading_entries() -> None:
+    # A caller sending its own X-Forwarded-For only adds entries on the left; rotating
+    # them must not move the caller to a fresh bucket.
+    request = _request(
+        {"x-forwarded-for": "1.2.3.4, 203.0.113.7, 35.191.0.1"}, client_host="10.0.0.1"
+    )
+    assert client_key_for(request, _ip_settings("x-forwarded-for", hops=2)) == "203.0.113.7"
+
+
+def test_client_key_ignores_a_spoofed_real_ip_when_reading_forwarded_for() -> None:
+    # X-Real-IP is not set by an appending proxy, so a client-sent one is pure spoof.
+    request = _request(
+        {"x-real-ip": "9.9.9.9", "x-forwarded-for": "203.0.113.7"}, client_host="10.0.0.1"
+    )
+    assert client_key_for(request, _ip_settings("x-forwarded-for", hops=1)) == "203.0.113.7"
+
+
+def test_client_key_falls_back_when_the_header_is_shorter_than_the_proxy_chain() -> None:
+    request = _request({"x-forwarded-for": "203.0.113.7"}, client_host="198.51.100.9")
+    assert client_key_for(request, _ip_settings("x-forwarded-for", hops=2)) == "198.51.100.9"
 
 
 def test_client_key_falls_back_to_socket_address_without_a_proxy() -> None:
-    assert client_key_for(_request({}, client_host="198.51.100.9")) == "198.51.100.9"
+    request = _request({}, client_host="198.51.100.9")
+    assert client_key_for(request, _ip_settings()) == "198.51.100.9"
 
 
 def test_client_key_handles_a_missing_client() -> None:
-    assert client_key_for(_request({}, client_host=None)) == "unknown"
+    assert client_key_for(_request({}, client_host=None), _ip_settings()) == "unknown"
+
+
+def test_trusted_proxy_hops_rejects_negative_values() -> None:
+    with pytest.raises(ValueError):
+        _ip_settings("x-forwarded-for", hops=-1)
 
 
 @pytest.mark.asyncio
