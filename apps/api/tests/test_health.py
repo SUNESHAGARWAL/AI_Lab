@@ -91,7 +91,7 @@ async def test_ready_is_degraded_when_redis_is_unreachable() -> None:
 
 @pytest.mark.asyncio
 async def test_liveness_stays_dependency_free_even_when_everything_is_down() -> None:
-    """Railway restarts the container ON_FAILURE against /health, so a suspended Neon
+    """The platform probe kills the instance when /health fails, so a suspended Neon
     must not be able to trigger a restart loop."""
     app.state.pool = _FakePool(error=ConnectionError("server closed"))
     app.state.redis_client = _FakeRedis(error=ConnectionError("closed"))

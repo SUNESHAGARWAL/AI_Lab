@@ -10,9 +10,10 @@ import { cachedFixtureFor, replayCachedQuery } from "@/lib/replay-client";
 import { streamQuery } from "@/lib/sse-client";
 import type { GraphEvent } from "@/lib/types/graph-events.generated";
 
-/** Railway's free tier cold-starts, and a cold start can take minutes. These stage the
- * waiting copy so the screen states what it's doing the whole time, and the hard cap
- * turns a genuinely hung request into a visible timeout rather than an indefinite spin.
+/** The backend scales to zero on its free tier, so the first query after an idle spell
+ * pays a cold start. These stage the waiting copy so the screen states what it's doing
+ * the whole time, and the hard cap turns a genuinely hung request into a visible
+ * timeout rather than an indefinite spin.
  * Generous on purpose: aborting a request that was merely waking up would report a
  * failure for something that would have succeeded. */
 const WAKING_AFTER_MS = 4_000;
