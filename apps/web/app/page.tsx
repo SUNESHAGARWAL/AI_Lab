@@ -139,7 +139,7 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-4 p-6">
-      <h1 className="font-serif text-2xl">AI Lab — streaming shell</h1>
+      <h1 className="font-serif text-2xl">Compliance copilot — EU AI Act &amp; GDPR</h1>
 
       <div>
         <form onSubmit={handleSubmit} className="flex gap-2">
