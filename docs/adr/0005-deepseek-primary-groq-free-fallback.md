@@ -141,3 +141,21 @@ including the planner and generator that task deliberately left unpatched.
   from published documentation, not yet confirmed against this project's own usage
   the way Groq's was); (c) revisit Gemini on current model ids once its account
   issue is resolved.
+
+## Addendum — 2026-09-19
+
+Two assumptions above no longer hold:
+
+- **No DeepSeek free tier.** DeepSeek's pricing page documents no daily free
+  allowance. The account runs on prepaid balance after a one-time sign-up grant. A
+  balance of zero returns 402, which the gateway treats as provider-unavailable and
+  falls back to Groq. Groq's free tier is about 15 queries/day of this workload. The
+  cost model above still holds (≈$0.003 per live query, measured), but a balance now
+  has to be topped up and monitored.
+- **Model names.** `deepseek-chat` / `deepseek-reasoner` were scheduled for
+  retirement on 2026-07-24 and are no longer listed in the docs, which now name
+  `deepseek-flash` and `deepseek-v4-pro`. A live production query on 2026-09-19 was
+  still served under the old names, so they resolve for now. Moving the registry to
+  the current names is a routing change: run it through `just evals-fast` and
+  Layer 3 first, not as a drive-by edit. If the old names start returning 404,
+  the gateway falls back to Groq on every call.
