@@ -52,6 +52,35 @@ async def test_success_path(fake_redis: FakeAsyncRedis) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("thinking", "expected"),
+    [("disabled", {"type": "disabled"}), ("enabled", {"type": "enabled"}), (None, None)],
+)
+async def test_thinking_mode_is_forwarded_only_when_set(
+    fake_redis: FakeAsyncRedis, thinking: str | None, expected: dict[str, str] | None
+) -> None:
+    calls: list[dict[str, Any]] = []
+
+    async def completion_fn(**kwargs: Any) -> Any:
+        calls.append(kwargs)
+        return make_response("ok")
+
+    provider = ProviderModel(provider="p1", model="p1/model", thinking=thinking)
+    gateway = Gateway(
+        settings=GatewaySettings(),
+        registry=_registry(provider),
+        redis_client=fake_redis,
+        completion_fn=completion_fn,
+    )
+
+    await gateway.complete(
+        CompletionRequest(tier=Tier.FAST, messages=[Message(role="user", content="hi")])
+    )
+
+    assert calls[0].get("thinking") == expected
+
+
+@pytest.mark.asyncio
 async def test_fallback_moves_to_next_provider_on_rate_limit(fake_redis: FakeAsyncRedis) -> None:
     calls: list[str] = []
 
