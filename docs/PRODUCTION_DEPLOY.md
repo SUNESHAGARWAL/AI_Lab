@@ -55,7 +55,7 @@ gcloud run deploy ai-lab-api \
   --memory 1Gi --cpu 1 --min-instances 0 --max-instances 1 \
   --concurrency 20 --timeout 300 \
   --startup-probe httpGet.path=/health,initialDelaySeconds=0,timeoutSeconds=5,periodSeconds=10,failureThreshold=12 \
-  --set-env-vars APP_ENV=production,FRONTEND_ORIGIN=https://<vercel-domain>,CLIENT_IP_HEADER=x-forwarded-for,TRUSTED_PROXY_HOPS=<n> \
+  --set-env-vars APP_ENV=production,FRONTEND_ORIGIN=https://<vercel-domain>,CLIENT_IP_HEADER=x-forwarded-for,TRUSTED_PROXY_HOPS=<n>,LIVE_QUERY_RATE_LIMIT_PER_HOUR=30 \
   --set-secrets DATABASE_URL=DATABASE_URL:latest,MIGRATIONS_DATABASE_URL=MIGRATIONS_DATABASE_URL:latest,REDIS_URL=REDIS_URL:latest,DEEPSEEK_API_KEY=DEEPSEEK_API_KEY:latest,GROQ_API_KEY=GROQ_API_KEY:latest
 ```
 
@@ -67,8 +67,29 @@ gcloud run deploy ai-lab-api \
 | `PORT` | Not set — Cloud Run injects `PORT=8080`, and the Dockerfile binds `${PORT:-8000}`. |
 | `DATABASE_URL` | Neon **pooled** string (`-pooler` in the host). |
 | `MIGRATIONS_DATABASE_URL` | Neon **direct** string. Migrations over the pooled connection, concurrent with the pool's own startup, crash uvicorn outright (reproduced — silent crash, only under uvicorn + a pooled connection). |
-| `MAX_QUERY_LENGTH`, `LIVE_QUERY_RATE_LIMIT_PER_HOUR` | Optional; defaults `2000`, `5`. |
+| `MAX_QUERY_LENGTH` | Optional; default `2000`. |
+| `LIVE_QUERY_RATE_LIMIT_PER_HOUR` | `30` in production. The code default of `5` is too low once the link is shared: one person asks follow-ups, and colleagues behind one office NAT share a bucket. Total spend is capped by the gateway's daily token ceiling, not by this value. See *Capacity* below. |
 | `LLM_*` | Optional; `packages/llm/src/llm/config.py`'s `GatewaySettings` defaults are production-reasonable. |
+
+### Capacity
+
+These numbers were measured on 2026-09-19 against the live service. One live query
+is about 6.3K tokens across planner, generator and critic, and takes about 10 s.
+
+| Limit | Value | Roughly how much it allows | Binds first when |
+|---|---|---|---|
+| Per-IP live queries (`LIVE_QUERY_RATE_LIMIT_PER_HOUR`) | 30/hour | a long exploring session | one visitor, or one office behind a NAT |
+| Gateway daily tokens (`LLM_PER_DAY_TOKEN_CEILING`) | 2M/day | about 300 queries/day, ≤ ~$1/day on DeepSeek Flash | the link spreads widely. This is the spend cap |
+| Cloud Run | 1 instance × 20 concurrent | 20 streams in flight | about 20 people press Ask in the same 10 s |
+| DeepSeek | account concurrency (thousands) | no per-minute or per-day cap | the prepaid balance runs out (402 → Groq fallback) |
+| Groq free fallback | about 100K tokens/day on `llama-3.3-70b-versatile` | about 15 queries/day | DeepSeek is down or out of balance |
+
+Cached example questions don't use any of these limits.
+
+The real risk to a demo is a **DeepSeek balance at zero**. DeepSeek has no free tier:
+it's prepaid, after a one-time sign-up grant. At that point every query falls back to
+Groq, which runs out within a dozen queries. Before sharing the link, check the balance
+at platform.deepseek.com.
 
 ### Client IP for the rate limiter
 
