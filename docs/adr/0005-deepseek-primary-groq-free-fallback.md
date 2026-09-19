@@ -155,7 +155,13 @@ Two assumptions above no longer hold:
 - **Model names.** `deepseek-chat` / `deepseek-reasoner` were scheduled for
   retirement on 2026-07-24 and are no longer listed in the docs, which now name
   `deepseek-flash` and `deepseek-v4-pro`. A live production query on 2026-09-19 was
-  still served under the old names, so they resolve for now. Moving the registry to
-  the current names is a routing change: run it through `just evals-fast` and
-  Layer 3 first, not as a drive-by edit. If the old names start returning 404,
-  the gateway falls back to Groq on every call.
+  still served under the old names, but a name that 404s drops every call to Groq.
+  **Migrated the same day** to `deepseek/deepseek-flash` for every tier. The
+  per-tier split now lives in `ProviderModel.thinking`: `disabled` for FAST/BULK
+  (what `deepseek-chat` aliased) and `enabled` for REASON (what
+  `deepseek-reasoner` aliased). Thinking is on by default for `deepseek-flash`,
+  so FAST/BULK must set it off explicitly. Price is unchanged between the two modes. `deepseek-v4-pro`
+  (about 4× the price) was not adopted.
+- **Groq in practice.** In real use Groq's free tier never serves a full query:
+  its TPM/TPD ceilings sit below one query's footprint. It stays in the chains only
+  as a last resort. DeepSeek's balance is the real availability dependency.

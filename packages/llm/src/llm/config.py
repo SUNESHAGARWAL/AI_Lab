@@ -23,8 +23,8 @@ class GatewaySettings(BaseSettings):
     cache_semantic_distance_threshold: float = 0.05
 
     # 8000 was too tight once the generator's max_tokens was raised to 4096 (see
-    # api.graph.nodes.make_generator_node's comment: deepseek/deepseek-reasoner, the
-    # reason tier's primary model, spends real completion tokens on an internal
+    # api.graph.nodes.make_generator_node's comment: deepseek-flash in thinking mode,
+    # the reason tier's primary model, spends real completion tokens on an internal
     # reasoning pass before visible content, verified empirically). Worst case:
     # DEFAULT_RERANK_TOP_N (5) full AI Act/GDPR article chunks (~5000 tokens) + the
     # question + 4096 max_tokens can approach 9500-10000 before this ceiling is
