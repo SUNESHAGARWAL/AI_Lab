@@ -49,6 +49,43 @@ uv run ruff check --fix .
 uv run mypy packages/core
 ```
 
+## Environments and release flow
+
+Three environments. There is no separate staging stack. On $0, Vercel previews fill that role.
+
+| Env | Web | API | Data |
+|---|---|---|---|
+| **dev** (local) | `pnpm --filter web dev`, `NEXT_PUBLIC_API_URL=http://localhost:8000` in `apps/web/.env.local` | `uvicorn` against `just dev`'s docker Postgres + Redis | local, disposable |
+| **preview** | Vercel builds every pushed branch | none. Previews still call the prod API, and CORS rejects any origin except the prod one, so only cached examples work there | — |
+| **prod** | Vercel, deploys automatically on every merge to `main` | Cloud Run `ai-lab-api`, deployed **manually** by image sha (`docs/PRODUCTION_DEPLOY.md`) | Neon + Upstash |
+
+What to run locally, based on what the change touches:
+
+- **Web-only (copy, UI):** you don't need the API. Cached examples replay from
+  `lib/example-fixtures.json`, so the answer view renders with no backend. Run the CI gates:
+  `pnpm --filter web lint && pnpm --filter web test && NEXT_PUBLIC_API_URL=https://example.invalid pnpm --filter web build`,
+  then look at the page in `pnpm --filter web dev`.
+- **API / graph / retrieval / prompts:** `just dev`, `uv run ruff check .`,
+  `uv run mypy packages/core`, `uv run pytest -m "not llm and not integration"`, and
+  `just evals-fast` for anything that changes retrieval or prompts.
+- Never point local dev at prod Neon/Upstash, except for the one-off corpus ingest
+  in `PRODUCTION_DEPLOY.md`.
+
+Release flow (git hygiene):
+
+1. Branch from an up-to-date `origin/main`: `git fetch && git switch -c <type>/<slug> origin/main`.
+   Don't reuse a branch that's already merged.
+2. Keep commits small, conventional and single-purpose. A code change and the docs it
+   motivates go in separate commits.
+3. Push and open a PR. CI (`ci.yml`, `gitleaks.yml`) must be green, and the Vercel preview must build.
+4. Merge to `main` with a merge commit (repo convention), then delete the branch. That merge
+   is the web deploy.
+5. If the PR touched the API's dependency closure, `publish-api.yml` pushes
+   `ghcr.io/…/ai-lab-api:<sha>`. Then run `gcloud run deploy` with that sha and check
+   `/health` and `/ready`. Roll back by redeploying an older sha.
+6. After any prod deploy, smoke-test the live URL: a cached example, one free-form
+   question, and a console with no errors.
+
 ## Layout
 
 ```
