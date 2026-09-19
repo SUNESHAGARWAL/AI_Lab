@@ -61,3 +61,18 @@ def test_only_gemini_providers_get_a_daily_request_ceiling() -> None:
                 assert provider.daily_request_ceiling is not None
             else:
                 assert provider.daily_request_ceiling is None
+
+
+def test_deepseek_uses_current_model_with_thinking_split_by_tier() -> None:
+    # deepseek-chat / deepseek-reasoner are retired names (ADR 0005 addendum). Both
+    # were modes of one model; the split now lives in ProviderModel.thinking, and
+    # FAST/BULK must turn it off explicitly — deepseek-flash defaults to on.
+    registry = build_default_registry(GatewaySettings())
+    for tier, thinking in (
+        (Tier.FAST, "disabled"),
+        (Tier.BULK, "disabled"),
+        (Tier.REASON, "enabled"),
+    ):
+        primary = registry.fallback_chain(tier)[0]
+        assert primary.model == "deepseek/deepseek-flash"
+        assert primary.thinking == thinking

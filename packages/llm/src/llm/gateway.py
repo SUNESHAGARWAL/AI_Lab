@@ -289,6 +289,11 @@ class Gateway:
                         max_tokens=request.max_tokens,
                         timeout=self._settings.request_timeout_seconds,
                         response_format=request.response_model,
+                        **(
+                            {"thinking": {"type": provider.thinking}}
+                            if provider.thinking is not None
+                            else {}
+                        ),
                     )
                 content = response.choices[0].message.content
                 if request.response_model is not None:

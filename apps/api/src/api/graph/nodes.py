@@ -218,7 +218,7 @@ def make_generator_node(
         query_text = state["rewritten_query"] or state["query"]
         messages = _build_messages(query_text, chunks)
         # 4096, not the complete_json default (1024): the reason tier's primary
-        # model, deepseek/deepseek-reasoner, spends real completion tokens on an
+        # model, deepseek-flash in thinking mode, spends real completion tokens on an
         # internal reasoning pass before emitting visible content — verified
         # empirically (a 300-token budget spent 118 tokens on reasoning alone,
         # finish_reason="length") — on top of which a thorough, fully-cited answer
