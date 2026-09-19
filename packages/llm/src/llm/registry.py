@@ -15,10 +15,10 @@ every 24h and was never close to exhausted. Reproduced directly against Groq's A
 `"tokens per minute (TPM): Limit 6000, Used 3038, Requested 3080."` on
 `llama-3.1-8b-instant`; confirmed TPM ceilings of 6,000-12,000 across every Groq
 model in this registry — tight against this project's real prompt sizes (full AI
-Act/GDPR article chunks). DeepSeek's free tier is a 500K-token/**day** allowance
-with no per-minute wall, comfortably covers this project's full usage estimate for
-$0, and (confirmed via `litellm.supports_response_schema`) supports *native*
-structured output — unlike Groq's small models, which make LiteLLM fall back to a
+Act/GDPR article chunks). DeepSeek is prepaid (no free tier, see the ADR 0005
+addendum), has no per-minute wall, costs well under a cent per live query, and
+(confirmed via `litellm.supports_response_schema`) supports *native* structured
+output — unlike Groq's small models, which make LiteLLM fall back to a
 tool-calling workaround these models invoke unreliably (see
 `packages/llm/src/llm/prompted_json.py`'s docstring for the `tool_use_failed`
 consequence of that).
@@ -30,6 +30,8 @@ Gemini-first branch in `_reason_chain` are commented out, not deleted, pending b
 an account/quota fix and switching off the now-deprecated `gemini-2.0-flash`/
 `gemini-2.0-flash-lite` model ids to `gemini-2.5-flash-lite` or newer.
 """
+
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -48,13 +50,20 @@ class ProviderModel(BaseModel):
     # itself stays generic so the skip mechanism in gateway.py isn't a
     # provider-name special case.
     daily_request_ceiling: int | None = None
+    # Sent as LiteLLM's `thinking` param when set; None sends nothing, leaving the
+    # provider's default. Needed because deepseek-flash defaults to thinking *on*:
+    # the FAST/BULK tiers must turn it off to keep the latency, cost and small
+    # max_tokens budgets they had under deepseek-chat.
+    thinking: Literal["enabled", "disabled"] | None = None
 
 
+# One model, two modes — the same split deepseek-chat / deepseek-reasoner used to
+# alias, before those names were retired (ADR 0005 addendum).
 _DEEPSEEK_CHAT = ProviderModel(
-    provider="deepseek", model="deepseek/deepseek-chat", max_concurrency=8
+    provider="deepseek", model="deepseek/deepseek-flash", max_concurrency=8, thinking="disabled"
 )
 _DEEPSEEK_REASON = ProviderModel(
-    provider="deepseek", model="deepseek/deepseek-reasoner", max_concurrency=4
+    provider="deepseek", model="deepseek/deepseek-flash", max_concurrency=4, thinking="enabled"
 )
 _GROQ_REASON = ProviderModel(
     provider="groq", model="groq/llama-3.3-70b-versatile", max_concurrency=4
