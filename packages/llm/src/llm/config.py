@@ -51,3 +51,10 @@ class GatewaySettings(BaseSettings):
     # (see llm.provider_usage), not something Gemini reports back to us.
     gemini_daily_request_ceiling: int = 1500
     gemini_soft_limit_fraction: float = 0.9
+
+    # Per-attempt audit trace for llm-audit (both off by default). LLM_AUDIT_TRACE is a
+    # file path (one JSON span per line) or the literal "stdout"; unset records nothing.
+    audit_trace: str | None = None
+    # LLM_AUDIT_PIN_DEEPSEEK: for a scripted audit run only, keeps each hosted tier's
+    # DeepSeek entries so every call is priced; the local tier is unaffected.
+    audit_pin_deepseek: bool = False

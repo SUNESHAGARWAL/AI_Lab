@@ -1,7 +1,7 @@
 import pytest
 from core.testing import FakeEmbedder
 from fakeredis import FakeAsyncRedis
-from llm.cache import ResponseCache
+from llm.cache import ResponseCache, _cache_key
 from llm.config import GatewaySettings
 from llm.models import CompletionRequest, CompletionResult, Message, Tier, Usage
 
@@ -85,3 +85,12 @@ async def test_semantic_miss_beyond_distance_threshold(fake_redis: FakeAsyncRedi
     hit = await cache.get(_request("completely unrelated question about spacecraft engines"))
 
     assert hit is None
+
+
+def test_feature_is_not_part_of_the_cache_key() -> None:
+    messages = [Message(role="user", content="q")]
+    untagged = CompletionRequest(tier=Tier.FAST, messages=messages)
+    planner = CompletionRequest(tier=Tier.FAST, messages=messages, feature="planner")
+    critic = CompletionRequest(tier=Tier.FAST, messages=messages, feature="critic")
+
+    assert _cache_key(untagged) == _cache_key(planner) == _cache_key(critic)
