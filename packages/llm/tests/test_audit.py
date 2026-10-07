@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import json
+import os
 from collections.abc import Awaitable, Callable, Iterator
 from pathlib import Path
 from types import SimpleNamespace
@@ -654,3 +655,133 @@ async def test_gateway_with_recording_off_runs_no_recorder_code(
 
     assert result.text == "ok"
     assert list(tmp_path.iterdir()) == []
+
+
+# --- Synthetic contract fixture for the llm-audit OTel GenAI ingest (1.6, 1.9) ---
+#
+# The committed fixture is a gateway trace from fake completions only; it holds no real data.
+# Trace and span ids and times are random per run, so by default the test only checks that a
+# fresh trace has the committed structure. Regenerate after any change to the record contract:
+#   AI_LAB_WRITE_FIXTURE=1 uv run pytest packages/llm/tests/test_audit.py -k contract_fixture
+# then copy the file to llm-audit's tests/fixtures/ for its contract test.
+
+CONTRACT_FIXTURE = Path(__file__).parent / "fixtures" / "ai_lab_attempts.jsonl"
+# Models the llm-audit price snapshot prices, so the ingest leaves nothing unpriced.
+DS_FLASH = ProviderModel(provider="deepseek", model="deepseek/deepseek-flash", max_concurrency=4)
+DS_PRO = ProviderModel(provider="deepseek", model="deepseek/deepseek-v4-pro", max_concurrency=4)
+# Fields that differ on every run: ids, links made of ids, times and the SDK's per-process id.
+_VOLATILE_KEYS = ("context", "parent_id", "start_time", "end_time")
+_VOLATILE_RESOURCE_KEYS = ("service.instance.id",)
+
+
+def _contract_request(case: str, *, system: bool, feature: str | None) -> CompletionRequest:
+    messages = [Message(role="user", content=f"{USER_SENTINEL} case {case}")]
+    if system:
+        messages.insert(0, Message(role="system", content=SYSTEM_SENTINEL))
+    return CompletionRequest(
+        tier=Tier.REASON, messages=messages, temperature=0.2, max_tokens=256, feature=feature
+    )
+
+
+def _400(model: str) -> BadRequestError:
+    response = httpx.Response(status_code=400, request=httpx.Request("POST", "https://x.invalid"))
+    return BadRequestError(
+        message=ERROR_SENTINEL, model=model, llm_provider="test", response=response
+    )
+
+
+async def _write_contract_trace(target: Path, redis: FakeAsyncRedis) -> None:
+    """Drives the real gateway through every attempt shape the field run can produce."""
+    gateway = Gateway(
+        settings=GatewaySettings(
+            _env_file=None,  # type: ignore[call-arg]
+            app_env="synthetic",
+            audit_trace=str(target),
+            same_provider_retry_attempts=2,
+            retry_backoff_initial_seconds=0,
+            retry_backoff_max_seconds=0,
+        ),
+        registry=TierRegistry({tier: [DS_FLASH, DS_PRO] for tier in Tier}),
+        redis_client=redis,
+        completion_fn=_scripted(
+            # (a) success with a system message
+            _response(model="deepseek-flash"),
+            # (b) same-provider 429, then success
+            _litellm_429(DS_FLASH.model),
+            _response(model="deepseek-flash", cached=0, reasoning=0),
+            # (c) retries exhausted on the first provider, then fallback to the second
+            _litellm_429(DS_FLASH.model),
+            _litellm_429(DS_FLASH.model),
+            _response(model="deepseek-v4-pro", finish_reason="length"),
+            # (d) a non-retryable error that ends the request
+            _400(DS_FLASH.model),
+            # (e) no system message and no feature
+            _response(model="deepseek-flash", cached=None, reasoning=None),
+        ),
+    )
+    a = await gateway.complete(_contract_request("a", system=True, feature="generator"))
+    b = await gateway.complete(_contract_request("b", system=True, feature="planner"))
+    c = await gateway.complete(_contract_request("c", system=True, feature="judge_metric"))
+    with pytest.raises(BadRequestError):
+        await gateway.complete(_contract_request("d", system=True, feature="critic"))
+    e = await gateway.complete(_contract_request("e", system=False, feature=None))
+    assert [a.provider, b.retry_count, c.model, e.provider] == [
+        "deepseek",
+        1,
+        DS_PRO.model,
+        "deepseek",
+    ]
+
+
+def _contract_shape(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Each line without its run-specific fields; retry_of becomes the index of the named line."""
+    index = {_call_id(span): i for i, span in enumerate(lines)}
+    shapes = []
+    for span in lines:
+        shape = {k: v for k, v in span.items() if k not in _VOLATILE_KEYS}
+        attributes = dict(span["attributes"])
+        if "llm_audit.retry_of" in attributes:
+            attributes["llm_audit.retry_of"] = index[attributes["llm_audit.retry_of"]]
+        shape["attributes"] = attributes
+        resource = span["resource"]["attributes"]
+        shape["resource"] = {k: v for k, v in resource.items() if k not in _VOLATILE_RESOURCE_KEYS}
+        shapes.append(shape)
+    return shapes
+
+
+async def test_contract_fixture_matches_a_fresh_gateway_trace(
+    tmp_path: Path, fake_redis: FakeAsyncRedis
+) -> None:
+    target = tmp_path / "attempts.jsonl"
+    await _write_contract_trace(target, fake_redis)
+
+    raw = target.read_text(encoding="utf-8")
+    for sentinel in ("SENTINEL", "statute", "article 5", "sk-abc", "case "):
+        assert sentinel not in raw
+    fresh = _spans(target)
+    shapes = _contract_shape(fresh)
+    assert [s["attributes"].get("llm_audit.feature") for s in shapes] == [
+        "generator",
+        "planner",
+        "planner",
+        "judge_metric",
+        "judge_metric",
+        "judge_metric",
+        "critic",
+        None,
+    ]
+    assert [s["attributes"]["llm_audit.attempt"] for s in shapes] == [1, 1, 2, 1, 2, 3, 1, 1]
+    assert [s["attributes"].get("llm_audit.retry_of") for s in shapes] == [
+        None, None, 1, None, 3, 4, None, None,
+    ]  # fmt: skip
+    assert [s["attributes"].get("error.type") for s in shapes] == [
+        None, "RateLimitError", None, "RateLimitError", "RateLimitError", None,
+        "BadRequestError", None,
+    ]  # fmt: skip
+    assert "llm_audit.prefix_hash" not in shapes[-1]["attributes"]
+
+    if os.environ.get("AI_LAB_WRITE_FIXTURE") == "1":
+        CONTRACT_FIXTURE.parent.mkdir(exist_ok=True)
+        CONTRACT_FIXTURE.write_text(raw, encoding="utf-8")
+    committed = [json.loads(line) for line in CONTRACT_FIXTURE.read_text().splitlines()]
+    assert _contract_shape(committed) == shapes
