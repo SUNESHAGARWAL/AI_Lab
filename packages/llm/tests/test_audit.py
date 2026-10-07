@@ -1,20 +1,32 @@
+import asyncio
 import hashlib
 import json
-from collections.abc import Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+import httpx
 import litellm
+import llm.gateway as gateway_module
 import pytest
+from conftest import make_response
+from core.testing import FakeEmbedder
+from fakeredis import FakeAsyncRedis
+from litellm.exceptions import BadRequestError
+from litellm.exceptions import RateLimitError as LiteLLMRateLimitError
 from llm.audit import AttemptRecorder
-from llm.gateway import _extract_status_code
+from llm.config import GatewaySettings
+from llm.gateway import Gateway, _extract_status_code
 from llm.models import CompletionRequest, Message, Tier
-from llm.registry import ProviderModel
+from llm.registry import ProviderModel, TierRegistry
 from opentelemetry.util.genai.environment_variables import (
     OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT,
     OTEL_INSTRUMENTATION_GENAI_COMPLETION_HOOK,
 )
+from opentelemetry.util.genai.handler import TelemetryHandler
+from opentelemetry.util.genai.invocation import InferenceInvocation
+from pydantic import BaseModel
 from structlog.testing import capture_logs
 from telemetry.audit_trace import open_audit_sink
 
@@ -360,3 +372,285 @@ def test_malformed_response_is_logged_and_the_record_still_ends(tmp_path: Path) 
     assert span["status"]["status_code"] == "UNSET"
     assert "gen_ai.usage.input_tokens" not in span["attributes"]
     assert "SENTINEL" not in repr(logs)
+
+
+# --- Gateway integration: one record per billed attempt (1.1, 1.3, 1.6, 1.7, 1.8) ---
+
+P1 = ProviderModel(provider="p1", model="p1/model", max_concurrency=4)
+P2 = ProviderModel(provider="p2", model="p2/model", max_concurrency=4)
+
+
+class _Answer(BaseModel):
+    value: str
+
+
+def _gateway(
+    redis: FakeAsyncRedis,
+    completion_fn: Callable[..., Awaitable[Any]],
+    *providers: ProviderModel,
+    audit_trace: Path | None,
+    retries: int = 2,
+    embedder: FakeEmbedder | None = None,
+) -> Gateway:
+    settings = GatewaySettings(
+        audit_trace=str(audit_trace) if audit_trace is not None else None,
+        same_provider_retry_attempts=retries,
+        retry_backoff_initial_seconds=0,
+        retry_backoff_max_seconds=0,
+    )
+    return Gateway(
+        settings=settings,
+        registry=TierRegistry({tier: list(providers) for tier in Tier}),
+        redis_client=redis,
+        embedder=embedder,
+        completion_fn=completion_fn,
+    )
+
+
+def _litellm_429(model: str) -> LiteLLMRateLimitError:
+    return LiteLLMRateLimitError(
+        message=ERROR_SENTINEL, llm_provider="test", model=model, headers={"retry-after": "0"}
+    )
+
+
+def _402(model: str) -> BadRequestError:
+    response = httpx.Response(status_code=402, request=httpx.Request("POST", "https://x.invalid"))
+    return BadRequestError(
+        message=ERROR_SENTINEL, model=model, llm_provider="test", response=response
+    )
+
+
+def _scripted(*outcomes: object) -> Callable[..., Awaitable[Any]]:
+    """A fake completion_fn that raises or returns the next scripted outcome per call."""
+    queue = list(outcomes)
+
+    async def _completion_fn(**kwargs: Any) -> Any:
+        outcome = queue.pop(0)
+        if isinstance(outcome, BaseException):
+            raise outcome
+        return outcome
+
+    return _completion_fn
+
+
+def _user_request(**kwargs: Any) -> CompletionRequest:
+    return CompletionRequest(
+        tier=Tier.FAST, messages=[Message(role="user", content=USER_SENTINEL)], **kwargs
+    )
+
+
+def _attr(span: dict[str, Any], name: str) -> Any:
+    return span["attributes"].get(name)
+
+
+def _call_id(span: dict[str, Any]) -> str:
+    return f"{span['context']['trace_id']}:{span['context']['span_id']}"
+
+
+async def test_gateway_429_then_success_writes_two_linked_records(
+    tmp_path: Path, fake_redis: FakeAsyncRedis
+) -> None:
+    target = tmp_path / "attempts.jsonl"
+    gateway = _gateway(
+        fake_redis,
+        _scripted(_litellm_429("p1/model"), make_response("ok")),
+        P1,
+        audit_trace=target,
+    )
+
+    result = await gateway.complete(_user_request())
+
+    assert result.text == "ok"
+    assert result.retry_count == 1
+    first, second = _spans(target)
+    assert _attr(first, "llm_audit.attempt") == 1
+    assert _attr(first, "llm_audit.retry_of") is None
+    assert _attr(first, "error.type") == "RateLimitError"
+    assert _attr(first, "http.response.status_code") == 429
+    assert first["status"]["status_code"] == "ERROR"
+    assert _attr(second, "llm_audit.attempt") == 2
+    assert _attr(second, "llm_audit.retry_of") == _call_id(first)
+    assert second["status"]["status_code"] == "UNSET"
+    assert _attr(second, "gen_ai.usage.input_tokens") == 10
+    assert _attr(second, "gen_ai.usage.output_tokens") == 5
+    assert "SENTINEL" not in target.read_text(encoding="utf-8")
+
+
+async def test_gateway_retry_exhaustion_then_fallback_continues_numbering(
+    tmp_path: Path, fake_redis: FakeAsyncRedis
+) -> None:
+    target = tmp_path / "attempts.jsonl"
+    gateway = _gateway(
+        fake_redis,
+        _scripted(_litellm_429("p1/model"), _litellm_429("p1/model"), make_response("from p2")),
+        P1,
+        P2,
+        audit_trace=target,
+    )
+
+    result = await gateway.complete(_user_request())
+
+    assert result.provider == "p2"
+    spans = _spans(target)
+    assert [_attr(s, "llm_audit.attempt") for s in spans] == [1, 2, 3]
+    assert [_attr(s, "gen_ai.provider.name") for s in spans] == ["p1", "p1", "p2"]
+    assert [_attr(s, "llm_audit.retry_of") for s in spans] == [
+        None,
+        _call_id(spans[0]),
+        _call_id(spans[1]),
+    ]
+    assert [s["status"]["status_code"] for s in spans] == ["ERROR", "ERROR", "UNSET"]
+
+
+async def test_gateway_provider_unavailable_then_fallback_continues_numbering(
+    tmp_path: Path, fake_redis: FakeAsyncRedis
+) -> None:
+    target = tmp_path / "attempts.jsonl"
+    gateway = _gateway(
+        fake_redis,
+        _scripted(_402("p1/model"), make_response("from p2")),
+        P1,
+        P2,
+        audit_trace=target,
+    )
+
+    result = await gateway.complete(_user_request())
+
+    assert result.provider == "p2"
+    first, second = _spans(target)
+    assert _attr(first, "error.type") == "BadRequestError"
+    assert _attr(first, "http.response.status_code") == 402
+    assert _attr(second, "llm_audit.attempt") == 2
+    assert _attr(second, "llm_audit.retry_of") == _call_id(first)
+    assert "SENTINEL" not in target.read_text(encoding="utf-8")
+
+
+async def test_gateway_parse_failure_is_a_failed_record_with_usage(
+    tmp_path: Path, fake_redis: FakeAsyncRedis
+) -> None:
+    target = tmp_path / "attempts.jsonl"
+    gateway = _gateway(
+        fake_redis,
+        _scripted(
+            make_response("not json", prompt_tokens=30, completion_tokens=7),
+            make_response('{"value": "42"}'),
+        ),
+        P1,
+        audit_trace=target,
+    )
+
+    result = await gateway.complete(_user_request(response_model=_Answer))
+
+    assert isinstance(result.parsed, _Answer)
+    failed, ok = _spans(target)
+    assert _attr(failed, "error.type") == "ValidationError"
+    assert failed["status"]["status_code"] == "ERROR"
+    assert _attr(failed, "gen_ai.usage.input_tokens") == 30
+    assert _attr(failed, "gen_ai.usage.output_tokens") == 7
+    assert "http.response.status_code" not in failed["attributes"]
+    assert _attr(ok, "llm_audit.retry_of") == _call_id(failed)
+    assert ok["status"]["status_code"] == "UNSET"
+
+
+async def test_gateway_cache_hit_writes_no_record(
+    tmp_path: Path, fake_redis: FakeAsyncRedis
+) -> None:
+    target = tmp_path / "attempts.jsonl"
+    calls: list[dict[str, Any]] = []
+
+    async def completion_fn(**kwargs: Any) -> Any:
+        calls.append(kwargs)
+        return make_response("cached answer")
+
+    gateway = _gateway(fake_redis, completion_fn, P1, audit_trace=target, embedder=FakeEmbedder())
+    request = _user_request()
+
+    first = await gateway.complete(request)
+    lines_after_first = len(_spans(target))
+    second = await gateway.complete(request)
+
+    assert first.cache_hit is False
+    assert second.cache_hit is True
+    assert len(calls) == 1
+    assert lines_after_first == 1
+    assert len(_spans(target)) == 1
+
+
+async def test_gateway_cancelled_call_writes_a_failed_record_and_propagates(
+    tmp_path: Path, fake_redis: FakeAsyncRedis
+) -> None:
+    target = tmp_path / "attempts.jsonl"
+    called = asyncio.Event()
+
+    async def completion_fn(**kwargs: Any) -> Any:
+        called.set()
+        await asyncio.Event().wait()  # never returns; the request is cancelled mid-call
+
+    gateway = _gateway(fake_redis, completion_fn, P1, audit_trace=target)
+    task = asyncio.create_task(gateway.complete(_user_request()))
+    await called.wait()
+    task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    [span] = _spans(target)
+    assert _attr(span, "error.type") == "CancelledError"
+    assert span["status"]["status_code"] == "ERROR"
+    assert _attr(span, "llm_audit.attempt") == 1
+
+
+def _broken_inference(self: object, *args: object, **kwargs: object) -> object:
+    raise RuntimeError(ERROR_SENTINEL)
+
+
+def _broken_end(self: object, *args: object, **kwargs: object) -> None:
+    raise RuntimeError(ERROR_SENTINEL)
+
+
+@pytest.mark.parametrize("broken", ["start", "end"])
+async def test_gateway_failing_recorder_leaves_the_result_unchanged(
+    tmp_path: Path, fake_redis: FakeAsyncRedis, monkeypatch: pytest.MonkeyPatch, broken: str
+) -> None:
+    def _outcomes() -> Callable[..., Awaitable[Any]]:
+        return _scripted(_litellm_429("p1/model"), make_response('{"value": "42"}'))
+
+    baseline = await _gateway(FakeAsyncRedis(), _outcomes(), P1, audit_trace=None).complete(
+        _user_request(response_model=_Answer)
+    )
+
+    if broken == "start":
+        monkeypatch.setattr(TelemetryHandler, "inference", _broken_inference)
+    else:
+        monkeypatch.setattr(InferenceInvocation, "stop", _broken_end)
+        monkeypatch.setattr(InferenceInvocation, "fail", _broken_end)
+    gateway = _gateway(fake_redis, _outcomes(), P1, audit_trace=tmp_path / "attempts.jsonl")
+    with capture_logs() as logs:
+        result = await gateway.complete(_user_request(response_model=_Answer))
+
+    assert result.model_dump(exclude={"latency_ms"}) == baseline.model_dump(exclude={"latency_ms"})
+    audit_logs = [entry for entry in logs if entry["event"] == "llm.audit_trace_failed"]
+    assert len(audit_logs) == 2
+    assert "SENTINEL" not in repr(logs)
+
+
+async def test_gateway_with_recording_off_runs_no_recorder_code(
+    tmp_path: Path, fake_redis: FakeAsyncRedis, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def _must_not_run(*args: object, **kwargs: object) -> None:
+        raise AssertionError("recorder code ran with recording off")
+
+    monkeypatch.setattr(gateway_module, "open_audit_sink", _must_not_run)
+    monkeypatch.setattr(gateway_module.AttemptRecorder, "__init__", _must_not_run)
+    monkeypatch.setattr(gateway_module.AttemptRecorder, "start", _must_not_run)
+    gateway = _gateway(
+        fake_redis,
+        _scripted(_litellm_429("p1/model"), make_response("ok")),
+        P1,
+        audit_trace=None,
+    )
+
+    result = await gateway.complete(_user_request())
+
+    assert result.text == "ok"
+    assert list(tmp_path.iterdir()) == []
