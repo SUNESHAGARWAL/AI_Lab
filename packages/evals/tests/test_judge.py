@@ -1,12 +1,13 @@
 import json
 from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from evals.judge import DEFAULT_JUDGE_TIER, GatewayJudgeModel, judge_citation_support
 from fakeredis import FakeAsyncRedis
 from llm.config import GatewaySettings
+from llm.models import CompletionRequest, CompletionResult
 
 from llm import Gateway, PromptedJsonError
 
@@ -42,6 +43,19 @@ def _gateway(
         redis_client=FakeAsyncRedis(),
         completion_fn=completion_fn,
     )
+
+
+class _CapturingGateway:
+    """Wraps a real Gateway and keeps every CompletionRequest it is handed, so a test
+    can read fields (like `feature`) that never reach the completion_fn kwargs."""
+
+    def __init__(self, inner: Gateway) -> None:
+        self._inner = inner
+        self.requests: list[CompletionRequest] = []
+
+    async def complete(self, request: CompletionRequest) -> CompletionResult:
+        self.requests.append(request)
+        return await self._inner.complete(request)
 
 
 @pytest.mark.asyncio
@@ -95,3 +109,29 @@ async def test_judge_citation_support_raises_after_repair_retry_also_fails() -> 
         await judge_citation_support(_gateway(completion_fn), "chunk text", "answer text")
 
     assert len(calls) == 2  # initial attempt + exactly one repair retry
+
+
+# --- feature tags ----------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_gateway_judge_model_tags_requests_with_judge_metric_feature() -> None:
+    completion_fn, _ = _make_completion_fn("raw judge text")
+    gateway = _CapturingGateway(_gateway(completion_fn))
+    model = GatewayJudgeModel(cast(Gateway, gateway))
+
+    await model.a_generate("some judge prompt")
+
+    assert [r.feature for r in gateway.requests] == ["judge_metric"]
+
+
+@pytest.mark.asyncio
+async def test_judge_citation_support_tags_requests_with_judge_citation_feature() -> None:
+    # Malformed every call, so the repair request is captured too.
+    completion_fn, _ = _make_completion_fn("not json at all")
+    gateway = _CapturingGateway(_gateway(completion_fn))
+
+    with pytest.raises(PromptedJsonError):
+        await judge_citation_support(cast(Gateway, gateway), "chunk text", "answer text")
+
+    assert [r.feature for r in gateway.requests] == ["judge_citation", "judge_citation"]

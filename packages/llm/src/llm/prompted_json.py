@@ -77,13 +77,16 @@ async def complete_json[T: BaseModel](
     messages: list[Message],
     response_model: type[T],
     max_tokens: int = 1024,
+    feature: str | None = None,
 ) -> T:
     """Gets a structured T via plain-text completion + our own parse, never via
     response_format. Every gateway.complete() call here still goes through the
     gateway's full retry/budget-guard/cache/fallback-chain machinery — only the
     "how do we get JSON out" layer is different. Real gateway failures
     (AllProvidersExhausted, BudgetExceeded) propagate immediately, not consumed by
-    a repair attempt; only parse/validation failures trigger the one repair retry."""
+    a repair attempt; only parse/validation failures trigger the one repair retry.
+    `feature` names the calling site and rides on both the first and the repair
+    request, so the audit trace attributes the repair to the same feature."""
     schema = json.dumps(response_model.model_json_schema())
     working_messages = [
         *messages,
@@ -92,7 +95,9 @@ async def complete_json[T: BaseModel](
 
     last_error: Exception | None = None
     for _attempt in range(2):  # initial attempt + exactly one repair retry
-        request = CompletionRequest(tier=tier, messages=working_messages, max_tokens=max_tokens)
+        request = CompletionRequest(
+            tier=tier, messages=working_messages, max_tokens=max_tokens, feature=feature
+        )
         result = await gateway.complete(request)
         try:
             json_str = extract_json_object(result.text)

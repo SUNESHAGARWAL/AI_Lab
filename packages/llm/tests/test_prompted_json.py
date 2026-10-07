@@ -1,12 +1,12 @@
 from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from conftest import make_response
 from fakeredis import FakeAsyncRedis
 from llm.gateway import Gateway
-from llm.models import Message, Tier
+from llm.models import CompletionRequest, CompletionResult, Message, Tier
 from llm.prompted_json import PromptedJsonError, complete_json, extract_json_object
 from pydantic import BaseModel, ConfigDict
 
@@ -34,6 +34,19 @@ def _sequenced_completion_fn(
 
 def _gateway(completion_fn: Callable[..., Awaitable[SimpleNamespace]]) -> Gateway:
     return Gateway(redis_client=FakeAsyncRedis(), completion_fn=completion_fn)
+
+
+class _CapturingGateway:
+    """Wraps a real Gateway and keeps every CompletionRequest it is handed, so a test
+    can read fields (like `feature`) that never reach the completion_fn kwargs."""
+
+    def __init__(self, inner: Gateway) -> None:
+        self._inner = inner
+        self.requests: list[CompletionRequest] = []
+
+    async def complete(self, request: CompletionRequest) -> CompletionResult:
+        self.requests.append(request)
+        return await self._inner.complete(request)
 
 
 # --- extract_json_object ---------------------------------------------------------
@@ -120,3 +133,35 @@ async def test_complete_json_raises_after_repair_retry_also_fails() -> None:
         )
 
     assert len(calls) == 2  # exactly initial attempt + one repair retry, no more
+
+
+@pytest.mark.asyncio
+async def test_complete_json_sends_feature_on_first_and_repair_requests() -> None:
+    completion_fn, _ = _sequenced_completion_fn(
+        ["not json at all", '{"supports": true, "reason": "fixed"}']
+    )
+    gateway = _CapturingGateway(_gateway(completion_fn))
+
+    await complete_json(
+        cast(Gateway, gateway),
+        Tier.FAST,
+        [Message(role="user", content="judge this")],
+        _Verdict,
+        feature="judge_citation",
+    )
+
+    assert [r.feature for r in gateway.requests] == ["judge_citation", "judge_citation"]
+
+
+@pytest.mark.asyncio
+async def test_complete_json_without_feature_sends_none() -> None:
+    completion_fn, _ = _sequenced_completion_fn(
+        ["not json at all", '{"supports": true, "reason": "fixed"}']
+    )
+    gateway = _CapturingGateway(_gateway(completion_fn))
+
+    await complete_json(
+        cast(Gateway, gateway), Tier.FAST, [Message(role="user", content="judge this")], _Verdict
+    )
+
+    assert [r.feature for r in gateway.requests] == [None, None]
