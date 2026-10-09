@@ -116,11 +116,31 @@ class TierRegistry:
         return self._chains[tier]
 
 
+def _pin_deepseek(chains: dict[Tier, list[ProviderModel]]) -> dict[Tier, list[ProviderModel]]:
+    """Run pin for a scripted audit run (LLM_AUDIT_PIN_DEEPSEEK): every hosted tier keeps
+    only its DeepSeek entries, so each call has a price in the audit's price snapshot. The
+    pinned run has no fallback. LOCAL is copied as is: uploaded content never goes hosted."""
+    pinned: dict[Tier, list[ProviderModel]] = {}
+    for tier, providers in chains.items():
+        if tier is Tier.LOCAL:
+            pinned[tier] = providers
+            continue
+        deepseek_only = [p for p in providers if p.provider == "deepseek"]
+        if not deepseek_only:
+            raise ValueError(
+                f"LLM_AUDIT_PIN_DEEPSEEK is on but the {tier.value} tier has no deepseek entry"
+            )
+        pinned[tier] = deepseek_only
+    return pinned
+
+
 def build_default_registry(settings: GatewaySettings) -> TierRegistry:
     default_chains: dict[Tier, list[ProviderModel]] = {
         **_STATIC_CHAINS,
         Tier.REASON: _reason_chain(settings.app_env),
     }
+    if settings.audit_pin_deepseek:
+        default_chains = _pin_deepseek(default_chains)
     chains: dict[Tier, list[ProviderModel]] = {}
     for tier, providers in default_chains.items():
         chains[tier] = [

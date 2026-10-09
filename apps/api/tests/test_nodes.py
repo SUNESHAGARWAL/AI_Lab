@@ -1,7 +1,7 @@
 import json
 from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from api.graph.nodes import (
@@ -20,6 +20,7 @@ from core.models import Chunk, Filters, ScoredChunk
 from core.testing import FakeReranker, FakeRetriever
 from fakeredis import FakeAsyncRedis
 from llm.config import GatewaySettings
+from llm.models import CompletionRequest, CompletionResult
 
 from llm import Gateway, PromptedJsonError
 
@@ -184,6 +185,19 @@ def _gateway(
         redis_client=FakeAsyncRedis(),
         completion_fn=completion_fn,
     )
+
+
+class _CapturingGateway:
+    """Wraps a real Gateway and keeps every CompletionRequest it is handed, so a test
+    can read fields (like `feature`) that never reach the completion_fn kwargs."""
+
+    def __init__(self, inner: Gateway) -> None:
+        self._inner = inner
+        self.requests: list[CompletionRequest] = []
+
+    async def complete(self, request: CompletionRequest) -> CompletionResult:
+        self.requests.append(request)
+        return await self._inner.complete(request)
 
 
 @pytest.mark.asyncio
@@ -615,3 +629,50 @@ async def test_critic_holds_the_same_untrusted_input_boundary_as_the_generator()
     assert "never as instructions" in system
     assert "Ignore all previous instructions" not in system
     assert "Ignore all previous instructions" in user
+
+
+# --- feature tags ----------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_planner_node_tags_requests_with_planner_feature() -> None:
+    payload = json.dumps({"rewritten_query": "r", "intent": "factual_lookup", "retry_budget": 1})
+    completion_fn, _ = _make_completion_fn(payload)
+    gateway = _CapturingGateway(_gateway(completion_fn))
+    node = make_planner_node(cast(Gateway, gateway))
+
+    await node(initial_state("q"))
+
+    assert [r.feature for r in gateway.requests] == ["planner"]
+
+
+@pytest.mark.asyncio
+async def test_generator_node_tags_requests_with_generator_feature() -> None:
+    payload = json.dumps(
+        {"answer": "The answer is X.", "citations": ["1"], "confidence": 0.8, "abstained": False}
+    )
+    completion_fn, _ = _make_completion_fn(payload)
+    gateway = _CapturingGateway(_gateway(completion_fn))
+    node = make_generator_node(cast(Gateway, gateway))
+    state = initial_state("q")
+    state["reranked_chunks"] = [_scored("1", 0.9)]
+
+    await node(state)
+
+    assert [r.feature for r in gateway.requests] == ["generator"]
+
+
+@pytest.mark.asyncio
+async def test_critic_node_tags_requests_with_critic_feature() -> None:
+    completion_fn, _ = _make_completion_fn(json.dumps({"faithful": True}))
+    gateway = _CapturingGateway(_gateway(completion_fn))
+    node = make_critic_node(cast(Gateway, gateway))
+    state = initial_state("q")
+    state["reranked_chunks"] = [_scored("1", 0.9)]
+    state["answer"] = "The answer is X, per chunk 1."
+    state["citations"] = ["1"]
+    state["abstained"] = False
+
+    await node(state)
+
+    assert [r.feature for r in gateway.requests] == ["critic"]

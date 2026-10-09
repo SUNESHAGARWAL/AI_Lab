@@ -68,7 +68,9 @@ def make_planner_node(
         # internal reasoning pass before emitting visible content — verified
         # empirically that a too-tight max_tokens can return empty content on
         # that model specifically. See packages/llm/src/llm/registry.py's docstring.
-        parsed = await complete_json(gateway, tier, messages, PlannerDecision, max_tokens=400)
+        parsed = await complete_json(
+            gateway, tier, messages, PlannerDecision, max_tokens=400, feature="planner"
+        )
 
         retry_budget = max(0, min(parsed.retry_budget, state["max_retries"]))
 
@@ -226,7 +228,9 @@ def make_generator_node(
         # budget truncates mid-JSON, which complete_json's repair retry can't
         # recover from (there's nothing wrong with the JSON to *fix*, it's just
         # incomplete).
-        result = await complete_json(gateway, tier, messages, GeneratedAnswer, max_tokens=4096)
+        result = await complete_json(
+            gateway, tier, messages, GeneratedAnswer, max_tokens=4096, feature="generator"
+        )
 
         parsed = _validate_citations(result, {sc.chunk.id for sc in chunks})
         return {
@@ -308,7 +312,9 @@ def make_critic_node(
         messages = _build_critic_messages(answer, state["citations"], state["reranked_chunks"])
         # 400, not a tighter number — same gpt-oss reasoning-overhead reasoning as
         # make_planner_node's max_tokens comment above.
-        verdict = await complete_json(gateway, tier, messages, CriticVerdict, max_tokens=400)
+        verdict = await complete_json(
+            gateway, tier, messages, CriticVerdict, max_tokens=400, feature="critic"
+        )
 
         if verdict.faithful:
             return {"needs_retry": False, "critic_feedback": None}

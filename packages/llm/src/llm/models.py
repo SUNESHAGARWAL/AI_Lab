@@ -32,6 +32,10 @@ class CompletionRequest(BaseModel):
     max_tokens: int = Field(default=1024, gt=0)
     response_model: type[BaseModel] | None = None
     user_uploaded_content: bool = False
+    # Calling graph node or judge, for per-feature cost attribution in the audit trace.
+    # Deliberately left out of `cache._cache_key`: the same prompt from two call sites
+    # is the same cacheable request.
+    feature: str | None = Field(default=None, max_length=64)
 
 
 class Usage(BaseModel):

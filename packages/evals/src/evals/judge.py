@@ -36,6 +36,7 @@ class GatewayJudgeModel(DeepEvalBaseLLM):
             tier=self._tier,
             messages=[Message(role="user", content=prompt)],
             max_tokens=2048,
+            feature="judge_metric",
         )
         result = await self._gateway.complete(request)
         return result.text
@@ -84,4 +85,6 @@ async def judge_citation_support(
     # gpt-oss model, which spends part of its budget on an internal reasoning pass
     # before visible content — verified empirically that a too-tight max_tokens can
     # return empty content on that model. See llm/registry.py's docstring.
-    return await complete_json(gateway, tier, messages, CitationSupportVerdict, max_tokens=350)
+    return await complete_json(
+        gateway, tier, messages, CitationSupportVerdict, max_tokens=350, feature="judge_citation"
+    )

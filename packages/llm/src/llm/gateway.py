@@ -15,11 +15,16 @@ testability seam. Whatever is passed in must return an object shaped like LiteLL
 `.usage.{prompt_tokens,completion_tokens,total_tokens}: int`. Unit tests inject a fake
 with that shape; nothing in this module makes a real network call unless the default
 `litellm.acompletion` is used.
+
+With `GatewaySettings.audit_trace` set, every provider call attempt (each same-provider
+retry and each fallback) also gets one content-free record on the audit trace through
+`llm.audit.AttemptRecorder`; with it unset, no recorder exists and no recorder code runs.
 """
 
 import asyncio
 import time
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import Any
 
 import litellm
@@ -37,6 +42,7 @@ from opentelemetry import trace
 from opentelemetry.trace import Span, Status, StatusCode
 from pydantic import BaseModel, ValidationError
 from redis.asyncio import Redis
+from telemetry.audit_trace import open_audit_sink
 from tenacity import (
     AsyncRetrying,
     RetryCallState,
@@ -45,6 +51,7 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
+from llm.audit import AttemptHandle, AttemptRecorder
 from llm.budget import BudgetGuard, Reservation
 from llm.cache import ResponseCache
 from llm.config import GatewaySettings
@@ -141,6 +148,28 @@ def _make_wait(settings: GatewaySettings) -> Callable[[RetryCallState], float]:
     return _wait
 
 
+@dataclass
+class _AttemptChain:
+    """Audit-trace numbering of one request's attempts, shared by the fallback loop in
+    `_complete` and the retry loop in `_call_provider`, so numbering and the link to the
+    previous attempt carry across retries and providers alike. Exists only while recording."""
+
+    recorder: AttemptRecorder
+    attempt: int = 0
+    last_call_id: str | None = None
+
+    def start(self, provider: ProviderModel, request: CompletionRequest) -> AttemptHandle:
+        self.attempt += 1
+        handle = self.recorder.start(
+            provider=provider,
+            request=request,
+            attempt=self.attempt,
+            retry_of=self.last_call_id,
+        )
+        self.last_call_id = handle.call_id
+        return handle
+
+
 class Gateway:
     def __init__(
         self,
@@ -162,6 +191,16 @@ class Gateway:
         self._logger = logger or get_logger(__name__)
         self._semaphores: dict[str, asyncio.Semaphore] = {}
         self._tracer = trace.get_tracer(__name__)
+        self._recorder = (
+            AttemptRecorder(
+                open_audit_sink(self._settings.audit_trace),
+                env=self._settings.app_env,
+                status_code=_extract_status_code,
+                logger=self._logger,
+            )
+            if self._settings.audit_trace
+            else None
+        )
 
     def _semaphore_for(self, provider: ProviderModel) -> asyncio.Semaphore:
         semaphore = self._semaphores.get(provider.provider)
@@ -203,6 +242,7 @@ class Gateway:
 
         total_attempts = 0
         last_exc: BaseException | None = None
+        attempt_chain = _AttemptChain(self._recorder) if self._recorder is not None else None
         for provider in chain:
             near_ceiling = (
                 provider.daily_request_ceiling is not None
@@ -220,7 +260,9 @@ class Gateway:
                 )
                 continue
             try:
-                response, parsed, attempts = await self._call_provider(provider, request)
+                response, parsed, attempts = await self._call_provider(
+                    provider, request, attempt_chain
+                )
             except Exception as exc:
                 if _is_retryable(exc):
                     total_attempts += self._settings.same_provider_retry_attempts
@@ -267,7 +309,10 @@ class Gateway:
         return prompt_tokens + request.max_tokens
 
     async def _call_provider(
-        self, provider: ProviderModel, request: CompletionRequest
+        self,
+        provider: ProviderModel,
+        request: CompletionRequest,
+        attempt_chain: _AttemptChain | None,
     ) -> tuple[Any, BaseModel | None, int]:
         attempts = 0
         parsed: BaseModel | None = None
@@ -281,23 +326,37 @@ class Gateway:
         async for attempt in retryer:
             attempts += 1
             with attempt:
-                async with self._semaphore_for(provider):
-                    response = await self._completion_fn(
-                        model=provider.model,
-                        messages=[m.model_dump() for m in request.messages],
-                        temperature=request.temperature,
-                        max_tokens=request.max_tokens,
-                        timeout=self._settings.request_timeout_seconds,
-                        response_format=request.response_model,
-                        **(
-                            {"thinking": {"type": provider.thinking}}
-                            if provider.thinking is not None
-                            else {}
-                        ),
-                    )
-                content = response.choices[0].message.content
-                if request.response_model is not None:
-                    parsed = request.response_model.model_validate_json(content)
+                record: AttemptHandle | None = None
+                try:
+                    async with self._semaphore_for(provider):
+                        if attempt_chain is not None:
+                            record = attempt_chain.start(provider, request)
+                        response = await self._completion_fn(
+                            model=provider.model,
+                            messages=[m.model_dump() for m in request.messages],
+                            temperature=request.temperature,
+                            max_tokens=request.max_tokens,
+                            timeout=self._settings.request_timeout_seconds,
+                            response_format=request.response_model,
+                            **(
+                                {"thinking": {"type": provider.thinking}}
+                                if provider.thinking is not None
+                                else {}
+                            ),
+                        )
+                    if record is not None:
+                        record.set_response(response)
+                    content = response.choices[0].message.content
+                    if request.response_model is not None:
+                        parsed = request.response_model.model_validate_json(content)
+                    if record is not None:
+                        record.succeed()
+                except BaseException as exc:
+                    # Any end of a billed attempt, CancelledError included, closes its
+                    # record; the exception itself is re-raised unchanged.
+                    if record is not None:
+                        record.fail(exc)
+                    raise
         return response, parsed, attempts
 
     async def _finish(
